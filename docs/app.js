@@ -102,8 +102,6 @@ const state = {
   selectedFields: new Set(),
   mappings: {},
   customFields: [],
-  closedMappings: new Set(),
-  mappingView: "tree",
 };
 
 const elements = {
@@ -137,8 +135,6 @@ const elements = {
   stepNav1: document.querySelector("#stepNav1"),
   stepNav2: document.querySelector("#stepNav2"),
   stepNav3: document.querySelector("#stepNav3"),
-  viewTreeBtn: document.querySelector("#viewTreeBtn"),
-  viewFlatBtn: document.querySelector("#viewFlatBtn"),
   nextButton: document.querySelector("#nextButton"),
   backButton1: document.querySelector("#backButton1"),
   backButton2: document.querySelector("#backButton2"),
@@ -201,7 +197,6 @@ function resetRecommendedFields() {
   for (const field of currentSchema().fields) {
     state.mappings[field.id] = defaultMapping(field);
   }
-  state.closedMappings = new Set();
 }
 
 function renderSchemaTypes() {
@@ -357,295 +352,9 @@ function renderFieldTiles() {
   }
 }
 
-function addInputRow({ container = elements.mappingForm, id, label, value, disabled = false, placeholder, onInput, onUpdate }) {
-  const template = document.querySelector("#mappingTemplate");
-  const row = template.content.firstElementChild.cloneNode(true);
-  const input = row.querySelector("input");
-  row.querySelector("label").textContent = label;
-  row.dataset.static = disabled ? "true" : "false";
-  input.id = id;
-  input.value = value || "";
-  input.disabled = disabled;
-  if (placeholder) input.placeholder = placeholder;
-  input.addEventListener("input", () => {
-    onInput(input.value);
-    onUpdate?.();
-    renderOutput();
-  });
-  container.appendChild(row);
-}
 
-function renderUseDefaultRow(container, cbId, checked, onToggle) {
-  const row = document.createElement("div");
-  row.className = "use-default-row";
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.id = cbId;
-  cb.checked = checked;
-  const label = document.createElement("label");
-  label.htmlFor = cbId;
-  label.textContent = "Use default";
-  row.appendChild(cb);
-  row.appendChild(label);
-  container.appendChild(row);
-  cb.addEventListener("change", () => onToggle(cb.checked));
-  return cb;
-}
 
-function renderOfferMappings(field, mapping, container) {
-  const isPriceDefaulted = mapping.useDefaultPrice !== false;
-  const priceGroup = document.createElement("div");
-  priceGroup.className = "field-binding-group";
-  addInputRow({
-    container: priceGroup,
-    id: `${field.id}-priceExpression`,
-    label: "Offer price",
-    value: isPriceDefaulted ? DEFAULT_OFFER.priceExpression : (mapping.priceExpression || ""),
-    placeholder: isPriceDefaulted ? "" : DEFAULT_OFFER.priceExpression,
-    disabled: isPriceDefaulted,
-    onInput: (value) => { mapping.priceExpression = value; },
-  });
-  renderUseDefaultRow(priceGroup, `${field.id}-useDefaultPrice`, isPriceDefaulted, (checked) => {
-    mapping.useDefaultPrice = checked;
-    if (checked) mapping.priceExpression = DEFAULT_OFFER.priceExpression;
-    else mapping.priceExpression = "";
-    renderMappings();
-    renderOutput();
-  });
-  container.appendChild(priceGroup);
 
-  const isCurrencyDefaulted = mapping.useDefaultCurrency !== false;
-  const currGroup = document.createElement("div");
-  currGroup.className = "field-binding-group";
-  addInputRow({
-    container: currGroup,
-    id: `${field.id}-currencyExpression`,
-    label: "Offer currency",
-    value: isCurrencyDefaulted ? DEFAULT_OFFER.currencyExpression : (mapping.currencyExpression || ""),
-    placeholder: isCurrencyDefaulted ? "" : DEFAULT_OFFER.currencyExpression,
-    disabled: isCurrencyDefaulted,
-    onInput: (value) => { mapping.currencyExpression = value; },
-  });
-  renderUseDefaultRow(currGroup, `${field.id}-useDefaultCurrency`, isCurrencyDefaulted, (checked) => {
-    mapping.useDefaultCurrency = checked;
-    if (checked) mapping.currencyExpression = DEFAULT_OFFER.currencyExpression;
-    else mapping.currencyExpression = "";
-    renderMappings();
-    renderOutput();
-  });
-  container.appendChild(currGroup);
-
-  addInputRow({
-    container,
-    id: `${field.id}-sellerName`,
-    label: "Seller name",
-    value: mapping.sellerName,
-    onInput: (value) => { mapping.sellerName = value; },
-  });
-  addInputRow({
-    container,
-    id: `${field.id}-sellerUrl`,
-    label: "Seller URL",
-    value: mapping.sellerUrl,
-    onInput: (value) => { mapping.sellerUrl = value; },
-  });
-}
-
-function renderPropertyValueMappings(field, mapping, container) {
-  const template = document.querySelector("#mappingTemplate");
-
-  mapping.entries.forEach((entry, idx) => {
-    const group = document.createElement("div");
-    group.className = "property-group";
-
-    const header = document.createElement("div");
-    header.className = "property-group-header";
-    const headerLabel = document.createElement("span");
-    headerLabel.textContent = `Property ${idx + 1}`;
-    header.appendChild(headerLabel);
-
-    if (mapping.entries.length > 1) {
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "btn-remove";
-      removeBtn.textContent = "Remove";
-      removeBtn.addEventListener("click", () => {
-        mapping.entries.splice(idx, 1);
-        renderMappings();
-        renderOutput();
-      });
-      header.appendChild(removeBtn);
-    }
-    group.appendChild(header);
-
-    const nameRow = template.content.firstElementChild.cloneNode(true);
-    nameRow.querySelector("label").textContent = "Property name";
-    const nameInput = nameRow.querySelector("input");
-    nameInput.id = `${field.id}-label-${idx}`;
-    nameInput.value = entry.label;
-    nameInput.addEventListener("input", () => {
-      entry.label = nameInput.value;
-      renderOutput();
-    });
-    group.appendChild(nameRow);
-
-    const fieldRow = template.content.firstElementChild.cloneNode(true);
-    fieldRow.querySelector("label").textContent = "Value";
-    const fieldInput = fieldRow.querySelector("input");
-    fieldInput.id = `${field.id}-expression-${idx}`;
-    fieldInput.value = entry.expression || "";
-    fieldInput.placeholder = "{!Record.FieldApiName}";
-    fieldInput.addEventListener("input", () => {
-      entry.expression = fieldInput.value;
-      renderOutput();
-    });
-    group.appendChild(fieldRow);
-
-    container.appendChild(group);
-  });
-
-  const addBtn = document.createElement("button");
-  addBtn.type = "button";
-  addBtn.className = "btn-add-entry";
-  addBtn.textContent = "+ Add another property";
-  addBtn.addEventListener("click", () => {
-    mapping.entries.push({ label: "", expression: "" });
-    renderMappings();
-  });
-  container.appendChild(addBtn);
-}
-
-function renderGenericMapping(field, mapping, container) {
-  if (field.defaultExpression !== undefined) {
-    const isDefaulted = mapping.useDefault !== false;
-    const group = document.createElement("div");
-    group.className = "field-binding-group";
-    addInputRow({
-      container: group,
-      id: `${field.id}-expression`,
-      label: field.label,
-      value: isDefaulted ? field.defaultExpression : (mapping.expression || ""),
-      placeholder: isDefaulted ? "" : field.defaultExpression,
-      disabled: isDefaulted,
-      onInput: (value) => { mapping.expression = value; },
-    });
-    renderUseDefaultRow(group, `${field.id}-useDefault`, isDefaulted, (checked) => {
-      mapping.useDefault = checked;
-      if (checked) mapping.expression = field.defaultExpression;
-      else mapping.expression = "";
-      renderMappings();
-      renderOutput();
-    });
-    container.appendChild(group);
-    return;
-  }
-
-  if (field.valueType === "expression" || field.valueType === "raw") {
-    addInputRow({
-      container,
-      id: `${field.id}-expression`,
-      label: field.label,
-      value: mapping.expression || "",
-      onInput: (value) => { mapping.expression = value; },
-    });
-    return;
-  }
-
-  addInputRow({
-    container,
-    id: `${field.id}-expression`,
-    label: field.label,
-    value: mapping.expression || "",
-    placeholder: field.defaultField ? `{!Record.${field.defaultField}}` : "{!Record.FieldApiName}",
-    onInput: (value) => { mapping.expression = value; },
-  });
-}
-
-function mappingSummary(field, mapping) {
-  if (field.valueType === "offer") {
-    return mapping.priceExpression || DEFAULT_OFFER.priceExpression;
-  }
-  if (field.valueType === "propertyValue") {
-    const count = (mapping.entries || []).length;
-    return `${count} propert${count === 1 ? "y" : "ies"}`;
-  }
-  return "";
-}
-
-function renderFlatMappings() {
-  elements.mappingForm.replaceChildren();
-  const selected = allFields().filter((field) => state.selectedFields.has(field.id));
-
-  if (!selected.length) {
-    const empty = document.createElement("p");
-    empty.className = "status warning";
-    empty.textContent = "Select at least one schema field to configure bindings.";
-    elements.mappingForm.appendChild(empty);
-    return;
-  }
-
-  const banner = document.createElement("p");
-  banner.className = "mapping-banner";
-  banner.innerHTML = "Enter a Salesforce merge field like <code>{!Record.Name}</code>, or a static value for any field.";
-  elements.mappingForm.appendChild(banner);
-
-  for (const field of selected) {
-    const mapping = ensureMapping(field);
-    const needsAccordion = field.valueType === "offer" || field.valueType === "propertyValue";
-
-    if (needsAccordion) {
-      const isClosed = state.closedMappings.has(field.id);
-      const accordion = document.createElement("div");
-      accordion.className = "mapping-accordion" + (isClosed ? " is-closed" : "");
-
-      const headerBtn = document.createElement("button");
-      headerBtn.type = "button";
-      headerBtn.className = "mapping-accordion-header";
-
-      const titleSpan = document.createElement("span");
-      titleSpan.className = "mapping-accordion-title";
-      titleSpan.textContent = field.label;
-
-      const summarySpan = document.createElement("span");
-      summarySpan.className = "mapping-accordion-summary";
-      summarySpan.textContent = mappingSummary(field, mapping);
-
-      const chevron = document.createElement("span");
-      chevron.className = "mapping-accordion-chevron";
-      chevron.setAttribute("aria-hidden", "true");
-      chevron.textContent = "▼";
-
-      headerBtn.appendChild(titleSpan);
-      headerBtn.appendChild(summarySpan);
-      headerBtn.appendChild(chevron);
-      accordion.appendChild(headerBtn);
-
-      const body = document.createElement("div");
-      body.className = "mapping-accordion-body";
-      accordion.appendChild(body);
-
-      headerBtn.addEventListener("click", () => {
-        if (state.closedMappings.has(field.id)) {
-          state.closedMappings.delete(field.id);
-          accordion.classList.remove("is-closed");
-        } else {
-          state.closedMappings.add(field.id);
-          accordion.classList.add("is-closed");
-        }
-      });
-
-      if (field.valueType === "offer") {
-        renderOfferMappings(field, mapping, body);
-      } else {
-        renderPropertyValueMappings(field, mapping, body);
-      }
-
-      elements.mappingForm.appendChild(accordion);
-    } else {
-      renderGenericMapping(field, mapping, elements.mappingForm);
-    }
-  }
-}
 
 // ── Tree mapping editor helpers ──
 
@@ -900,7 +609,7 @@ function appendTreeObjectField(parent, field, mapping, atType) {
   inner.appendChild(nameRow);
 }
 
-function renderTreeMappings() {
+function renderMappings() {
   elements.mappingForm.replaceChildren();
   const selected = allFields().filter((f) => state.selectedFields.has(f.id));
 
@@ -948,14 +657,6 @@ function renderTreeMappings() {
   node.appendChild(tmBraceSpan("}"));
   wrap.appendChild(node);
   elements.mappingForm.appendChild(wrap);
-}
-
-function renderMappings() {
-  if (state.mappingView === "tree") {
-    renderTreeMappings();
-  } else {
-    renderFlatMappings();
-  }
 }
 
 function valueForField(field) {
@@ -1333,27 +1034,10 @@ elements.clearFieldsButton.addEventListener("click", () => {
   renderAll();
 });
 
-elements.viewTreeBtn.addEventListener("click", () => {
-  if (state.mappingView === "tree") return;
-  state.mappingView = "tree";
-  elements.viewTreeBtn.setAttribute("aria-pressed", "true");
-  elements.viewFlatBtn.setAttribute("aria-pressed", "false");
-  renderMappings();
-});
-
-elements.viewFlatBtn.addEventListener("click", () => {
-  if (state.mappingView === "flat") return;
-  state.mappingView = "flat";
-  elements.viewFlatBtn.setAttribute("aria-pressed", "true");
-  elements.viewTreeBtn.setAttribute("aria-pressed", "false");
-  renderMappings();
-});
-
 elements.resetMappingsButton.addEventListener("click", () => {
   for (const field of allFields()) {
     state.mappings[field.id] = defaultMapping(field);
   }
-  state.closedMappings = new Set();
   renderAll();
 });
 

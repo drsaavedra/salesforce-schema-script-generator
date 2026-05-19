@@ -68,14 +68,7 @@
       <section class="wizard-step" id="wizardStep2" aria-labelledby="step2Heading" hidden>
         <div class="step-header">
           <h2 id="step2Heading">Salesforce Bindings</h2>
-          <div class="step-header-actions">
-            <div class="view-toggle" role="group" aria-label="View mode">
-              <button type="button" class="btn-view-toggle" id="viewTreeBtn" aria-pressed="true">Tree</button>
-              <button type="button" class="btn-view-toggle" id="viewFlatBtn" aria-pressed="false">Form</button>
-            </div>
-            <span class="btn-group-divider" aria-hidden="true"></span>
-            <button type="button" id="resetMappingsButton">Reset</button>
-          </div>
+          <button type="button" id="resetMappingsButton">Reset</button>
         </div>
         <div id="mappingForm" class="mapping-form"></div>
         <div class="step-footer">
@@ -119,23 +112,6 @@
         <span class="schema-card-title"></span>
         <span class="schema-card-status"></span>
       </button>
-    </template>
-
-    <template id="fieldTemplate">
-      <label class="field-row">
-        <input type="checkbox" />
-        <span>
-          <strong></strong>
-          <small></small>
-        </span>
-      </label>
-    </template>
-
-    <template id="mappingTemplate">
-      <div class="mapping-row">
-        <label></label>
-        <input type="text" autocomplete="off" />
-      </div>
     </template>
 
     <script src="schema-parser.js"></script>
