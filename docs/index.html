@@ -42,10 +42,17 @@
           <h2 id="step1Heading">Select Schema Fields</h2>
           <div class="step-header-actions">
             <button type="button" id="previewSchemaButton">Preview Schema</button>
+            <span class="btn-group-divider" aria-hidden="true"></span>
+            <button type="button" id="selectAllButton">Select All</button>
+            <button type="button" id="recommendedButton">Recommended</button>
             <button type="button" id="clearFieldsButton">Clear</button>
           </div>
         </div>
         <input id="fieldSearch" class="field-search-input" type="text" placeholder="Search fields..." autocomplete="off" />
+        <div class="field-meta-row">
+          <span id="fieldCounter" class="field-counter"></span>
+          <button type="button" id="selectAllMatchingBtn" class="btn-select-matching" hidden></button>
+        </div>
         <div class="field-tiles" id="fieldList"></div>
         <div class="field-pagination" id="fieldPagination" hidden>
           <button type="button" id="fieldPrevButton">&larr; Prev</button>
@@ -61,7 +68,14 @@
       <section class="wizard-step" id="wizardStep2" aria-labelledby="step2Heading" hidden>
         <div class="step-header">
           <h2 id="step2Heading">Salesforce Bindings</h2>
-          <button type="button" id="resetMappingsButton">Reset</button>
+          <div class="step-header-actions">
+            <div class="view-toggle" role="group" aria-label="View mode">
+              <button type="button" class="btn-view-toggle" id="viewTreeBtn" aria-pressed="true">Tree</button>
+              <button type="button" class="btn-view-toggle" id="viewFlatBtn" aria-pressed="false">Form</button>
+            </div>
+            <span class="btn-group-divider" aria-hidden="true"></span>
+            <button type="button" id="resetMappingsButton">Reset</button>
+          </div>
         </div>
         <div id="mappingForm" class="mapping-form"></div>
         <div class="step-footer">

@@ -244,8 +244,17 @@ h2 {
 }
 
 .step-header-actions {
+  align-items: center;
   display: flex;
   gap: 8px;
+}
+
+.btn-group-divider {
+  background: var(--line);
+  border-radius: 1px;
+  flex-shrink: 0;
+  height: 22px;
+  width: 1px;
 }
 
 .step-footer {
@@ -317,6 +326,19 @@ h2 {
   margin-top: 2px;
 }
 
+.tile-badge {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  color: var(--accent-strong);
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 5px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+
 .field-tile.is-selected .tile-body strong {
   color: var(--accent-strong);
 }
@@ -339,7 +361,38 @@ h2 {
 
 /* ── Field search ── */
 .field-search-input {
+  margin-bottom: 8px;
+}
+
+/* ── Field meta row ── */
+.field-meta-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 12px;
+  min-height: 20px;
+}
+
+.field-counter {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.btn-select-matching {
+  background: none;
+  border: none;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+  min-height: auto;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-select-matching:hover {
+  border-color: transparent;
+  color: var(--accent);
 }
 
 /* ── Custom field row ── */
@@ -358,6 +411,54 @@ h2 {
   gap: 14px;
 }
 
+.field-binding-group {
+  display: grid;
+  gap: 6px;
+}
+
+/* ── Mapping banner ── */
+.mapping-banner {
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  margin: 0;
+  padding: 10px 14px;
+}
+
+.mapping-banner code {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 3px;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+}
+
+/* ── Use default row ── */
+.use-default-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.use-default-row input[type="checkbox"] {
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 16px;
+  min-height: auto;
+  padding: 0;
+  width: 16px;
+}
+
+.use-default-row label {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .mapping-row {
   display: grid;
   gap: 7px;
@@ -372,6 +473,11 @@ h2 {
 .mapping-row[data-static="true"] input {
   background: #f4f6f5;
   color: #495650;
+}
+
+.mapping-row input::placeholder {
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  font-style: italic;
 }
 
 .mapping-row .hint {
@@ -418,6 +524,183 @@ h2 {
   color: var(--accent-strong);
   font-size: 13px;
   width: 100%;
+}
+
+/* ── Mapping accordion ── */
+.mapping-accordion {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mapping-accordion-header {
+  align-items: center;
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: auto;
+  padding: 12px 16px;
+  text-align: left;
+  user-select: none;
+  width: 100%;
+}
+
+.mapping-accordion-header:hover {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.mapping-accordion-title {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mapping-accordion-summary {
+  color: var(--muted);
+  flex: 1;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapping-accordion-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+
+.mapping-accordion.is-closed .mapping-accordion-chevron {
+  transform: rotate(-90deg);
+}
+
+.mapping-accordion-body {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.mapping-accordion.is-closed .mapping-accordion-body {
+  display: none;
+}
+
+/* ── View toggle ── */
+.view-toggle {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  overflow: hidden;
+}
+
+.btn-view-toggle {
+  border: none;
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.btn-view-toggle:hover {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.btn-view-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-view-toggle + .btn-view-toggle {
+  border-left: 1px solid var(--line);
+}
+
+/* ── Tree mapping editor ── */
+.tree-mapping-editor {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 13px;
+  line-height: 1.9;
+  padding: 16px 20px;
+}
+
+.tree-input {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1px solid transparent;
+  border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 3px 3px 0 0;
+  color: var(--ink);
+  display: inline-block;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 13px;
+  min-height: auto;
+  padding: 0 6px;
+  vertical-align: baseline;
+  width: 320px;
+}
+
+.tree-input:focus {
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
+  outline: none;
+}
+
+.tree-input::placeholder {
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  font-style: italic;
+}
+
+.tree-input.is-disabled,
+.tree-input:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+
+.tree-use-default {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 3px;
+  margin-right: 6px;
+  vertical-align: baseline;
+}
+
+.tree-use-default input[type="checkbox"] {
+  border-radius: 2px;
+  cursor: pointer;
+  height: 12px;
+  min-height: auto;
+  padding: 0;
+  width: 12px;
+}
+
+.tree-use-default span {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tree-array-btn {
+  font-size: 12px;
+  margin-left: 8px;
+  min-height: auto;
+  padding: 2px 8px;
 }
 
 /* ── Output ── */
