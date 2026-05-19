@@ -68,13 +68,14 @@ textarea {
 }
 
 textarea {
-  min-height: 520px;
+  min-height: 400px;
   resize: vertical;
   font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
   font-size: 13px;
   line-height: 1.5;
 }
 
+/* ── Header ── */
 .app-header {
   align-items: center;
   background: #ffffff;
@@ -82,15 +83,13 @@ textarea {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  padding: 24px clamp(16px, 4vw, 48px);
+  padding: 20px clamp(16px, 4vw, 48px);
 }
 
-.eyebrow,
-.step {
+.eyebrow {
   color: var(--accent-strong);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
@@ -102,7 +101,7 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(26px, 4vw, 40px);
+  font-size: clamp(22px, 3vw, 34px);
 }
 
 h2 {
@@ -119,46 +118,25 @@ h2 {
   white-space: nowrap;
 }
 
-.workspace {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(280px, 0.86fr) minmax(360px, 1.14fr);
-  padding: 16px clamp(16px, 4vw, 48px) 48px;
+/* ── Schema type bar ── */
+.schema-bar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  padding: 12px clamp(16px, 4vw, 48px);
 }
 
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 18px;
-}
-
-.panel-heading {
-  align-items: center;
+.schema-bar-inner {
   display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.panel-actions {
-  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-}
-
-.schema-grid {
-  display: grid;
-  gap: 10px;
 }
 
 .schema-card {
   align-items: center;
   display: flex;
-  justify-content: space-between;
-  min-height: 54px;
-  padding: 12px;
-  text-align: left;
-  width: 100%;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
 }
 
 .schema-card[aria-pressed="true"] {
@@ -172,7 +150,7 @@ h2 {
 }
 
 .schema-card-title {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .schema-card-status {
@@ -180,38 +158,197 @@ h2 {
   font-size: 12px;
 }
 
-.field-list {
-  display: grid;
+/* ── Wizard container ── */
+.wizard-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 48px) 64px;
+}
+
+/* ── Step nav ── */
+.steps-nav {
+  align-items: center;
+  display: flex;
+  margin-bottom: 24px;
+}
+
+.step-nav-btn {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  min-height: auto;
+  padding: 6px 10px;
+}
+
+.step-nav-btn:hover {
+  border: none;
+  color: var(--ink);
+}
+
+.step-nav-btn[aria-current="step"] {
+  color: var(--accent-strong);
+}
+
+.step-nav-btn.is-done {
+  color: var(--ink);
+}
+
+.step-num {
+  align-items: center;
+  background: var(--line);
+  border-radius: 50%;
+  display: flex;
+  font-size: 12px;
+  font-weight: 700;
+  height: 24px;
+  justify-content: center;
+  min-width: 24px;
+  width: 24px;
+}
+
+.step-nav-btn[aria-current="step"] .step-num {
+  background: var(--accent);
+  color: #fff;
+}
+
+.step-nav-btn.is-done .step-num {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.step-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.step-divider {
+  background: var(--line);
+  flex: 1;
+  height: 1px;
+  max-width: 48px;
+  min-width: 12px;
+}
+
+/* ── Wizard steps ── */
+.wizard-step {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.step-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.step-header-actions {
+  display: flex;
   gap: 8px;
 }
 
-.field-row {
+.step-footer {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 20px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+/* ── Field tiles ── */
+.field-tiles {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.field-tile {
   align-items: flex-start;
   border: 1px solid var(--line);
   border-radius: 6px;
+  cursor: pointer;
   display: grid;
   gap: 10px;
   grid-template-columns: 18px 1fr;
   min-height: 56px;
   padding: 11px;
+  text-align: left;
+  width: 100%;
 }
 
-.field-row input {
-  margin-top: 2px;
-  min-height: auto;
-  padding: 0;
+.field-tile:hover {
+  border-color: var(--accent);
 }
 
-.field-row strong,
-.field-row small {
+.field-tile.is-selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.tile-mark {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.tile-body strong,
+.tile-body small {
   display: block;
 }
 
-.field-row small {
+.tile-body small {
   color: var(--muted);
+  font-size: 12px;
   margin-top: 2px;
 }
 
+.field-tile.is-selected .tile-body strong {
+  color: var(--accent-strong);
+}
+
+/* ── Field pagination ── */
+.field-pagination {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.field-pagination span {
+  color: var(--muted);
+  font-size: 13px;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* ── Field search ── */
+.field-search-input {
+  margin-bottom: 12px;
+}
+
+/* ── Custom field row ── */
 .custom-field-row {
   border-top: 1px solid var(--line);
   display: grid;
@@ -221,6 +358,7 @@ h2 {
   padding-top: 16px;
 }
 
+/* ── Mapping form ── */
 .mapping-form {
   display: grid;
   gap: 14px;
@@ -247,17 +385,76 @@ h2 {
   font-size: 12px;
 }
 
-.output-panel {
-  grid-row: span 3;
+/* ── Property group (multiple additionalProperty entries) ── */
+.property-group {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
 }
 
-.output-panel .panel-heading {
-  margin-bottom: 12px;
+.property-group-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
 }
 
+.property-group-header span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.btn-remove {
+  border-color: transparent;
+  color: var(--warn);
+  font-size: 13px;
+  min-height: auto;
+  padding: 2px 8px;
+}
+
+.btn-remove:hover {
+  border-color: var(--warn);
+}
+
+.btn-add-entry {
+  border-style: dashed;
+  color: var(--accent-strong);
+  font-size: 13px;
+  width: 100%;
+}
+
+/* ── Output ── */
+.output-warnings {
+  margin-bottom: 10px;
+}
+
+.warning-list {
+  color: var(--warn);
+  display: grid;
+  font-size: 13px;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding-left: 18px;
+}
+
+.validator-link {
+  color: var(--accent-strong);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.validator-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Status ── */
 .status {
   color: var(--accent-strong);
   font-size: 13px;
+  margin-top: 8px;
   min-height: 20px;
 }
 
@@ -265,35 +462,28 @@ h2 {
   color: var(--warn);
 }
 
-@media (max-width: 980px) {
-  .workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .output-panel {
-    grid-row: auto;
-  }
-}
-
-@media (max-width: 700px) {
-  .app-header,
-  .panel-heading {
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .app-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .panel-actions,
   .source-link {
+    text-align: center;
     width: 100%;
   }
 
-  .panel-actions button,
-  .source-link {
-    flex: 1;
-    text-align: center;
+  .step-label {
+    display: none;
   }
 
-  .custom-field-row {
+  .field-tiles {
     grid-template-columns: 1fr;
+  }
+
+  .step-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

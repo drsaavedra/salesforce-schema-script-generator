@@ -15,68 +15,78 @@
       <a class="source-link" href="https://schema.org/Product" target="_blank" rel="noreferrer">schema.org/Product</a>
     </header>
 
-    <main class="workspace">
-      <section class="panel schema-panel" aria-labelledby="schema-type-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Step 1</p>
-            <h2 id="schema-type-heading">Schema Type</h2>
-          </div>
-        </div>
-        <div class="schema-grid" id="schemaTypeList"></div>
-      </section>
+    <div class="schema-bar">
+      <div class="schema-bar-inner" id="schemaTypeList"></div>
+    </div>
 
-      <section class="panel fields-panel" aria-labelledby="fields-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Step 2</p>
-            <h2 id="fields-heading">Schema Fields</h2>
-          </div>
-          <div class="panel-actions">
+    <div class="wizard-container">
+      <nav class="steps-nav" aria-label="Steps">
+        <button class="step-nav-btn" id="stepNav1" aria-current="step">
+          <span class="step-num">1</span>
+          <span class="step-label">Select Fields</span>
+        </button>
+        <span class="step-divider" aria-hidden="true"></span>
+        <button class="step-nav-btn" id="stepNav2">
+          <span class="step-num">2</span>
+          <span class="step-label">Salesforce Bindings</span>
+        </button>
+        <span class="step-divider" aria-hidden="true"></span>
+        <button class="step-nav-btn" id="stepNav3">
+          <span class="step-num">3</span>
+          <span class="step-label">Output</span>
+        </button>
+      </nav>
+
+      <section class="wizard-step" id="wizardStep1" aria-labelledby="step1Heading">
+        <div class="step-header">
+          <h2 id="step1Heading">Select Schema Fields</h2>
+          <div class="step-header-actions">
             <button type="button" id="selectRecommendedButton">Recommended</button>
             <button type="button" id="clearFieldsButton">Clear</button>
           </div>
         </div>
-        <div class="field-list" id="fieldList"></div>
-        <div class="custom-field-row">
-          <input id="customPropertyName" type="text" placeholder="schema.org property" autocomplete="off" />
-          <input id="customPropertyField" type="text" placeholder="Product2 field API name" autocomplete="off" />
-          <select id="customPropertyType" aria-label="Custom property value type">
-            <option value="text">Text</option>
-            <option value="number">Number</option>
-            <option value="array">Array</option>
-            <option value="raw">Raw expression</option>
-          </select>
-          <button type="button" id="addCustomFieldButton">Add</button>
+        <input id="fieldSearch" class="field-search-input" type="text" placeholder="Search fields..." autocomplete="off" />
+        <div class="field-tiles" id="fieldList"></div>
+        <div class="field-pagination" id="fieldPagination" hidden>
+          <button type="button" id="fieldPrevButton">&larr; Prev</button>
+          <span id="fieldPageIndicator">Page 1 of 1</span>
+          <button type="button" id="fieldNextButton">Next &rarr;</button>
+        </div>
+        <div class="step-footer">
+          <span></span>
+          <button type="button" class="btn-primary" id="nextButton">Next &rarr;</button>
         </div>
       </section>
 
-      <section class="panel mapping-panel" aria-labelledby="mapping-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Step 3</p>
-            <h2 id="mapping-heading">Salesforce Bindings</h2>
-          </div>
+      <section class="wizard-step" id="wizardStep2" aria-labelledby="step2Heading" hidden>
+        <div class="step-header">
+          <h2 id="step2Heading">Salesforce Bindings</h2>
           <button type="button" id="resetMappingsButton">Reset</button>
         </div>
         <div id="mappingForm" class="mapping-form"></div>
+        <div class="step-footer">
+          <button type="button" id="backButton1">&larr; Back</button>
+          <button type="button" class="btn-primary" id="finishButton">Finish &rarr;</button>
+        </div>
       </section>
 
-      <section class="panel output-panel" aria-labelledby="output-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Output</p>
-            <h2 id="output-heading">Head Markup Script</h2>
-          </div>
-          <div class="panel-actions">
+      <section class="wizard-step" id="wizardStep3" aria-labelledby="step3Heading" hidden>
+        <div class="step-header">
+          <h2 id="step3Heading">Head Markup Script</h2>
+          <div class="step-header-actions">
             <button type="button" id="copyButton">Copy</button>
             <button type="button" id="downloadButton">Download</button>
           </div>
         </div>
+        <div id="outputWarnings" class="output-warnings" aria-live="polite"></div>
         <textarea id="scriptOutput" spellcheck="false" aria-label="Generated script"></textarea>
+        <div class="step-footer">
+          <button type="button" id="backButton2">&larr; Edit</button>
+          <a class="validator-link" href="https://validator.schema.org/" target="_blank" rel="noreferrer">Validate on schema.org &rarr;</a>
+        </div>
         <p class="status" id="copyStatus" role="status" aria-live="polite"></p>
       </section>
-    </main>
+    </div>
 
     <template id="schemaTypeTemplate">
       <button type="button" class="schema-card">
@@ -102,6 +112,7 @@
       </div>
     </template>
 
+    <script src="schema-parser.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

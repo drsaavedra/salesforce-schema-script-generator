@@ -4,178 +4,77 @@ const SCHEMA_REGISTRY = {
     status: "Ready",
     sourceUrl: "https://schema.org/Product",
     fields: [
-      {
-        id: "name",
-        label: "Name",
-        path: "name",
-        defaultField: "Name",
-        defaultSelected: true,
-        valueType: "text",
-      },
-      {
-        id: "description",
-        label: "Description",
-        path: "description",
-        defaultField: "Description",
-        defaultSelected: true,
-        valueType: "text",
-      },
-      {
-        id: "image",
-        label: "Image",
-        path: "image",
-        defaultField: "URL_Picture__c",
-        defaultSelected: true,
-        valueType: "imageArray",
-      },
-      {
-        id: "sku",
-        label: "SKU",
-        path: "sku",
-        defaultField: "StockKeepingUnit",
-        defaultSelected: true,
-        valueType: "text",
-      },
-      {
-        id: "brand",
-        label: "Brand",
-        path: "brand.name",
-        defaultField: "OSF_Brand__c",
-        defaultSelected: true,
-        valueType: "brand",
-      },
-      {
-        id: "offers",
-        label: "Offer",
-        path: "offers",
-        defaultSelected: true,
-        valueType: "offer",
-      },
-      {
-        id: "additionalProperty",
-        label: "Additional Property",
-        path: "additionalProperty",
-        defaultField: "OSF_B2BFeaturesandBenefits__c",
-        defaultSelected: true,
-        valueType: "propertyValue",
-      },
-      {
-        id: "url",
-        label: "Product URL",
-        path: "url",
-        defaultField: "",
-        defaultExpression: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "category",
-        label: "Category",
-        path: "category",
-        defaultExpression: "{!Record.ProductCategory.Name}",
-        defaultSelected: false,
-        valueType: "expression",
-      },
-      {
-        id: "mpn",
-        label: "MPN",
-        path: "mpn",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "gtin",
-        label: "GTIN",
-        path: "gtin",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "gtin8",
-        label: "GTIN-8",
-        path: "gtin8",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "gtin12",
-        label: "GTIN-12",
-        path: "gtin12",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "gtin13",
-        label: "GTIN-13",
-        path: "gtin13",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "gtin14",
-        label: "GTIN-14",
-        path: "gtin14",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "model",
-        label: "Model",
-        path: "model",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "material",
-        label: "Material",
-        path: "material",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "color",
-        label: "Color",
-        path: "color",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "size",
-        label: "Size",
-        path: "size",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "text",
-      },
-      {
-        id: "manufacturer",
-        label: "Manufacturer",
-        path: "manufacturer.name",
-        defaultField: "",
-        defaultSelected: false,
-        valueType: "organization",
-      },
+      // ── Recommended (pre-selected) ──
+      { id: "name",               label: "Name",               path: "name",               defaultField: "Name",            defaultSelected: true,  valueType: "text" },
+      { id: "description",        label: "Description",        path: "description",        defaultField: "Description",     defaultSelected: true,  valueType: "text" },
+      { id: "image",              label: "Image",              path: "image",              defaultField: "URL_Picture__c",  defaultSelected: true,  valueType: "imageArray" },
+      { id: "sku",                label: "SKU",                path: "sku",                defaultField: "StockKeepingUnit",defaultSelected: true,  valueType: "text" },
+      { id: "brand",              label: "Brand",              path: "brand.name",         defaultField: "",                defaultSelected: true,  valueType: "brand" },
+      { id: "offers",             label: "Offers",             path: "offers",             defaultField: "",                defaultSelected: true,  valueType: "offer" },
+      { id: "additionalProperty", label: "Additional Property",path: "additionalProperty", defaultField: "",                defaultSelected: true,  valueType: "propertyValue" },
+      // ── All other Product + Thing properties (alphabetical) ──
+      { id: "additionalType",             label: "Additional Type",               path: "additionalType",             defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "aggregateRating",            label: "Aggregate Rating",              path: "aggregateRating",            defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "alternateName",              label: "Alternate Name",                path: "alternateName",              defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "audience",                   label: "Audience",                      path: "audience",                   defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "award",                      label: "Award",                         path: "award",                      defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "awards",                     label: "Awards",                        path: "awards",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "category",                   label: "Category",                      path: "category",                   defaultExpression: "{!Record.ProductCategory.Name}", defaultSelected: false, valueType: "expression" },
+      { id: "color",                      label: "Color",                         path: "color",                      defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "countryOfOrigin",            label: "Country Of Origin",             path: "countryOfOrigin",            defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "depth",                      label: "Depth",                         path: "depth",                      defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "disambiguatingDescription",  label: "Disambiguating Description",    path: "disambiguatingDescription",  defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "gtin",                       label: "GTIN",                          path: "gtin",                       defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "gtin8",                      label: "GTIN-8",                        path: "gtin8",                      defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "gtin12",                     label: "GTIN-12",                       path: "gtin12",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "gtin13",                     label: "GTIN-13",                       path: "gtin13",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "gtin14",                     label: "GTIN-14",                       path: "gtin14",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "height",                     label: "Height",                        path: "height",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "identifier",                 label: "Identifier",                    path: "identifier",                 defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "isAccessoryOrSparePartFor",  label: "Is Accessory Or Spare Part For",path: "isAccessoryOrSparePartFor",  defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "isConsumableFor",            label: "Is Consumable For",             path: "isConsumableFor",            defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "isFamilyFriendly",           label: "Is Family Friendly",            path: "isFamilyFriendly",           defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "isRelatedTo",                label: "Is Related To",                 path: "isRelatedTo",                defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "isSimilarTo",                label: "Is Similar To",                 path: "isSimilarTo",                defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "isVariantOf",                label: "Is Variant Of",                 path: "isVariantOf",                defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "itemCondition",              label: "Item Condition",                path: "itemCondition",              defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "keywords",                   label: "Keywords",                      path: "keywords",                   defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "logo",                       label: "Logo",                          path: "logo",                       defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "mainEntityOfPage",           label: "Main Entity Of Page",           path: "mainEntityOfPage",           defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "manufacturer",              label: "Manufacturer",                  path: "manufacturer.name",          defaultField: "", defaultSelected: false, valueType: "organization" },
+      { id: "material",                   label: "Material",                      path: "material",                   defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "model",                      label: "Model",                         path: "model",                      defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "mpn",                        label: "MPN",                           path: "mpn",                        defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "owner",                      label: "Owner",                         path: "owner",                      defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "pattern",                    label: "Pattern",                       path: "pattern",                    defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "potentialAction",            label: "Potential Action",              path: "potentialAction",            defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "predecessorOf",              label: "Predecessor Of",                path: "predecessorOf",              defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "productID",                  label: "Product ID",                    path: "productID",                  defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "productionDate",             label: "Production Date",               path: "productionDate",             defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "purchaseDate",               label: "Purchase Date",                 path: "purchaseDate",               defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "releaseDate",                label: "Release Date",                  path: "releaseDate",                defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "review",                     label: "Review",                        path: "review",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "reviews",                    label: "Reviews",                       path: "reviews",                    defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "sameAs",                     label: "Same As",                       path: "sameAs",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "size",                       label: "Size",                          path: "size",                       defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "slogan",                     label: "Slogan",                        path: "slogan",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "subjectOf",                  label: "Subject Of",                    path: "subjectOf",                  defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "successorOf",                label: "Successor Of",                  path: "successorOf",                defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "url",                        label: "URL",                           path: "url",                        defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "weight",                     label: "Weight",                        path: "weight",                     defaultField: "", defaultSelected: false, valueType: "text" },
+      { id: "width",                      label: "Width",                         path: "width",                      defaultField: "", defaultSelected: false, valueType: "text" },
     ],
   },
   ProductGroup: {
     label: "ProductGroup",
-    status: "Planned",
+    status: "Coming soon",
     sourceUrl: "https://schema.org/ProductGroup",
     fields: [],
     disabled: true,
   },
   ProductCollection: {
     label: "ProductCollection",
-    status: "Planned",
+    status: "Coming soon",
     sourceUrl: "https://schema.org/ProductCollection",
     fields: [],
     disabled: true,
@@ -194,6 +93,10 @@ const RAW_TOKEN_PREFIX = "__SCHEMA_GENERATOR_RAW_";
 
 const state = {
   schemaType: "Product",
+  currentStep: 1,
+  fieldPage: 0,
+  fieldSearchQuery: "",
+  schemaLoading: false,
   selectedFields: new Set(),
   mappings: {},
   customFields: [],
@@ -211,10 +114,22 @@ const elements = {
   copyButton: document.querySelector("#copyButton"),
   downloadButton: document.querySelector("#downloadButton"),
   sourceLink: document.querySelector(".source-link"),
-  customPropertyName: document.querySelector("#customPropertyName"),
-  customPropertyField: document.querySelector("#customPropertyField"),
-  customPropertyType: document.querySelector("#customPropertyType"),
-  addCustomFieldButton: document.querySelector("#addCustomFieldButton"),
+  outputWarnings: document.querySelector("#outputWarnings"),
+  fieldSearch: document.querySelector("#fieldSearch"),
+  fieldPagination: document.querySelector("#fieldPagination"),
+  fieldPrevButton: document.querySelector("#fieldPrevButton"),
+  fieldNextButton: document.querySelector("#fieldNextButton"),
+  fieldPageIndicator: document.querySelector("#fieldPageIndicator"),
+  wizardStep1: document.querySelector("#wizardStep1"),
+  wizardStep2: document.querySelector("#wizardStep2"),
+  wizardStep3: document.querySelector("#wizardStep3"),
+  stepNav1: document.querySelector("#stepNav1"),
+  stepNav2: document.querySelector("#stepNav2"),
+  stepNav3: document.querySelector("#stepNav3"),
+  nextButton: document.querySelector("#nextButton"),
+  backButton1: document.querySelector("#backButton1"),
+  backButton2: document.querySelector("#backButton2"),
+  finishButton: document.querySelector("#finishButton"),
 };
 
 function currentSchema() {
@@ -227,9 +142,7 @@ function recordExpression(fieldApiName) {
 }
 
 function rawExpression(value) {
-  return {
-    __rawExpression: value,
-  };
+  return { __rawExpression: value };
 }
 
 function fieldById(id) {
@@ -250,8 +163,7 @@ function defaultMapping(field) {
   }
   if (field.valueType === "propertyValue") {
     return {
-      label: "Features and Benefits",
-      fieldApiName: field.defaultField || "",
+      entries: [{ label: "Features and Benefits", fieldApiName: field.defaultField || "" }],
     };
   }
   if (field.defaultExpression !== undefined) {
@@ -284,6 +196,7 @@ function renderSchemaTypes() {
   elements.sourceLink.href = currentSchema().sourceUrl;
   elements.sourceLink.textContent = `schema.org/${state.schemaType}`;
   for (const [schemaType, schema] of Object.entries(SCHEMA_REGISTRY)) {
+    if (schema.hidden) continue;
     const node = template.content.firstElementChild.cloneNode(true);
     node.querySelector(".schema-card-title").textContent = schema.label;
     node.querySelector(".schema-card-status").textContent = schema.status;
@@ -291,32 +204,107 @@ function renderSchemaTypes() {
     node.setAttribute("aria-pressed", schemaType === state.schemaType ? "true" : "false");
     node.addEventListener("click", () => {
       state.schemaType = schemaType;
+      state.fieldPage = 0;
+      state.fieldSearchQuery = "";
       resetRecommendedFields();
+      goToStep(1);
       renderAll();
     });
     elements.schemaTypeList.appendChild(node);
   }
 }
 
-function renderFields() {
-  const template = document.querySelector("#fieldTemplate");
+function renderFieldTiles() {
+  const PAGE_SIZE = 10;
+  elements.fieldSearch.value = state.fieldSearchQuery;
+
+  if (state.schemaLoading) {
+    elements.fieldList.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "status";
+    p.style.gridColumn = "1 / -1";
+    p.textContent = "Loading fields from schema.org…";
+    elements.fieldList.appendChild(p);
+    elements.fieldPagination.hidden = true;
+    return;
+  }
+
+  const query = state.fieldSearchQuery.trim().toLowerCase();
+  const all = allFields();
+
+  const filtered = query
+    ? all.filter(
+        (f) =>
+          f.label.toLowerCase().includes(query) ||
+          f.path.toLowerCase().includes(query) ||
+          (f.description && f.description.toLowerCase().includes(query))
+      )
+    : all;
+
+  const sorted = [
+    ...filtered.filter((f) => state.selectedFields.has(f.id)),
+    ...filtered.filter((f) => !state.selectedFields.has(f.id)),
+  ];
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  state.fieldPage = Math.min(state.fieldPage, totalPages - 1);
+  const paged = sorted.slice(state.fieldPage * PAGE_SIZE, (state.fieldPage + 1) * PAGE_SIZE);
+
   elements.fieldList.replaceChildren();
-  for (const field of allFields()) {
-    const node = template.content.firstElementChild.cloneNode(true);
-    const checkbox = node.querySelector("input");
-    checkbox.checked = state.selectedFields.has(field.id);
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        state.selectedFields.add(field.id);
-        ensureMapping(field);
-      } else {
-        state.selectedFields.delete(field.id);
-      }
-      renderAll();
-    });
-    node.querySelector("strong").textContent = field.label;
-    node.querySelector("small").textContent = field.path;
-    elements.fieldList.appendChild(node);
+
+  if (!sorted.length) {
+    const empty = document.createElement("p");
+    empty.className = "status";
+    empty.style.gridColumn = "1 / -1";
+    empty.textContent = query ? "No fields match your search." : "No fields available.";
+    elements.fieldList.appendChild(empty);
+  } else {
+    for (const field of paged) {
+      const isSelected = state.selectedFields.has(field.id);
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "field-tile" + (isSelected ? " is-selected" : "");
+      tile.setAttribute("aria-pressed", String(isSelected));
+
+      const mark = document.createElement("span");
+      mark.className = "tile-mark";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = isSelected ? "✓" : "";
+
+      const body = document.createElement("span");
+      body.className = "tile-body";
+      const strong = document.createElement("strong");
+      strong.textContent = field.label;
+      const small = document.createElement("small");
+      small.textContent = field.path;
+      body.appendChild(strong);
+      body.appendChild(small);
+
+      tile.appendChild(mark);
+      tile.appendChild(body);
+      tile.addEventListener("click", () => {
+        if (isSelected) {
+          state.selectedFields.delete(field.id);
+        } else {
+          state.selectedFields.add(field.id);
+          ensureMapping(field);
+        }
+        state.fieldPage = 0;
+        renderFieldTiles();
+        renderMappings();
+        renderOutput();
+      });
+      elements.fieldList.appendChild(tile);
+    }
+  }
+
+  if (totalPages <= 1) {
+    elements.fieldPagination.hidden = true;
+  } else {
+    elements.fieldPagination.hidden = false;
+    elements.fieldPrevButton.disabled = state.fieldPage === 0;
+    elements.fieldNextButton.disabled = state.fieldPage >= totalPages - 1;
+    elements.fieldPageIndicator.textContent = `Page ${state.fieldPage + 1} of ${totalPages}`;
   }
 }
 
@@ -378,23 +366,70 @@ function renderOfferMappings(field, mapping) {
 }
 
 function renderPropertyValueMappings(field, mapping) {
-  addInputRow({
-    id: `${field.id}-label`,
-    label: `${field.label} name`,
-    value: mapping.label,
-    onInput: (value) => {
-      mapping.label = value;
-    },
+  const template = document.querySelector("#mappingTemplate");
+
+  mapping.entries.forEach((entry, idx) => {
+    const group = document.createElement("div");
+    group.className = "property-group";
+
+    const header = document.createElement("div");
+    header.className = "property-group-header";
+    const headerLabel = document.createElement("span");
+    headerLabel.textContent = `Property ${idx + 1}`;
+    header.appendChild(headerLabel);
+
+    if (mapping.entries.length > 1) {
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn-remove";
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => {
+        mapping.entries.splice(idx, 1);
+        renderMappings();
+        renderOutput();
+      });
+      header.appendChild(removeBtn);
+    }
+    group.appendChild(header);
+
+    const nameRow = template.content.firstElementChild.cloneNode(true);
+    nameRow.querySelector("label").textContent = "Property name";
+    const nameInput = nameRow.querySelector("input");
+    nameInput.id = `${field.id}-label-${idx}`;
+    nameInput.value = entry.label;
+    nameInput.addEventListener("input", () => {
+      entry.label = nameInput.value;
+      renderOutput();
+    });
+    group.appendChild(nameRow);
+
+    const fieldRow = template.content.firstElementChild.cloneNode(true);
+    fieldRow.querySelector("label").textContent = "Field API name";
+    const fieldInput = fieldRow.querySelector("input");
+    fieldInput.id = `${field.id}-fieldApiName-${idx}`;
+    fieldInput.value = entry.fieldApiName;
+    fieldInput.addEventListener("input", () => {
+      entry.fieldApiName = fieldInput.value;
+      renderOutput();
+    });
+    const hint = document.createElement("div");
+    hint.className = "hint";
+    hint.textContent = "Field API name only. The generated script wraps this as {!Record.FieldApiName}.";
+    fieldRow.appendChild(hint);
+    group.appendChild(fieldRow);
+
+    elements.mappingForm.appendChild(group);
   });
-  addInputRow({
-    id: `${field.id}-fieldApiName`,
-    label: `${field.label} value field`,
-    value: mapping.fieldApiName,
-    hint: "Field API name only. The generated script wraps this as {!Record.FieldApiName}.",
-    onInput: (value) => {
-      mapping.fieldApiName = value;
-    },
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn-add-entry";
+  addBtn.textContent = "+ Add another property";
+  addBtn.addEventListener("click", () => {
+    mapping.entries.push({ label: "", fieldApiName: "" });
+    renderMappings();
   });
+  elements.mappingForm.appendChild(addBtn);
 }
 
 function renderGenericMapping(field, mapping) {
@@ -500,13 +535,13 @@ function applySelectedField(graph, field) {
   }
 
   if (field.valueType === "propertyValue") {
-    graph.additionalProperty = [
-      {
+    graph.additionalProperty = (mapping.entries || [])
+      .filter((e) => e.label || e.fieldApiName)
+      .map((e) => ({
         "@type": "PropertyValue",
-        name: mapping.label || "Property",
-        value: recordExpression(mapping.fieldApiName),
-      },
-    ];
+        name: e.label || "Property",
+        value: recordExpression(e.fieldApiName),
+      }));
     return;
   }
 
@@ -560,13 +595,90 @@ function buildScript() {
   return `<script type="application/ld+json">\n${graphToJsonWithExpressions(graph)}\n</script>`;
 }
 
+function buildWarnings() {
+  const warnings = [];
+  for (const fieldId of state.selectedFields) {
+    const field = fieldById(fieldId) || customFieldById(fieldId);
+    if (!field) continue;
+    const mapping = ensureMapping(field);
+    if (field.valueType === "offer") {
+      if (!String(mapping.priceExpression || "").trim()) {
+        warnings.push("Offer: price expression is empty.");
+      }
+      if (!String(mapping.currencyExpression || "").trim()) {
+        warnings.push("Offer: currency expression is empty.");
+      }
+    } else if (field.valueType === "expression" || field.valueType === "raw") {
+      if (!String(mapping.expression || "").trim()) {
+        warnings.push(`${field.label}: expression is empty.`);
+      }
+    } else if (field.valueType === "propertyValue") {
+      for (const entry of mapping.entries || []) {
+        if (!String(entry.fieldApiName || "").trim()) {
+          const name = String(entry.label || "").trim() || "Unnamed";
+          warnings.push(`${field.label} - ${name}: no field API name set.`);
+        }
+      }
+    } else {
+      if (!String(mapping.fieldApiName || "").trim()) {
+        warnings.push(`${field.label}: no field API name set.`);
+      }
+    }
+  }
+  return warnings;
+}
+
+function renderWarnings() {
+  const warnings = buildWarnings();
+  elements.outputWarnings.replaceChildren();
+  if (!warnings.length) return;
+  const list = document.createElement("ul");
+  list.className = "warning-list";
+  for (const msg of warnings) {
+    const item = document.createElement("li");
+    item.textContent = msg;
+    list.appendChild(item);
+  }
+  elements.outputWarnings.appendChild(list);
+}
+
 function renderOutput() {
   elements.scriptOutput.value = buildScript();
+  renderWarnings();
+}
+
+async function loadSchemaData() {
+  state.schemaLoading = true;
+  renderFieldTiles();
+  try {
+    const fields = await loadSchemaFields();
+    if (fields.length) {
+      SCHEMA_REGISTRY.Product.fields = fields;
+    }
+  } catch (_) {}
+  state.schemaLoading = false;
+}
+
+function updateStepNav() {
+  [1, 2, 3].forEach((n) => {
+    const btn = elements[`stepNav${n}`];
+    const isActive = n === state.currentStep;
+    btn.setAttribute("aria-current", isActive ? "step" : "false");
+    btn.classList.toggle("is-done", n < state.currentStep);
+  });
+}
+
+function goToStep(step) {
+  state.currentStep = step;
+  elements.wizardStep1.hidden = step !== 1;
+  elements.wizardStep2.hidden = step !== 2;
+  elements.wizardStep3.hidden = step !== 3;
+  updateStepNav();
 }
 
 function renderAll() {
   renderSchemaTypes();
-  renderFields();
+  renderFieldTiles();
   renderMappings();
   renderOutput();
 }
@@ -601,41 +713,17 @@ function downloadOutput() {
   URL.revokeObjectURL(url);
 }
 
-function addCustomField() {
-  const propertyName = elements.customPropertyName.value.trim();
-  const fieldApiName = elements.customPropertyField.value.trim();
-  const valueType = elements.customPropertyType.value;
-  if (!propertyName || !fieldApiName) {
-    elements.copyStatus.textContent = "Custom fields need a schema property and Product2 field.";
-    clearStatusSoon();
-    return;
-  }
-
-  const id = `custom-${Date.now()}`;
-  const field = {
-    id,
-    label: propertyName,
-    path: propertyName,
-    defaultField: valueType === "raw" ? "" : fieldApiName,
-    defaultExpression: valueType === "raw" ? fieldApiName : undefined,
-    defaultSelected: true,
-    valueType,
-  };
-  state.customFields.push(field);
-  state.selectedFields.add(id);
-  state.mappings[id] = defaultMapping(field);
-  elements.customPropertyName.value = "";
-  elements.customPropertyField.value = "";
-  renderAll();
-}
-
 elements.selectRecommendedButton.addEventListener("click", () => {
   resetRecommendedFields();
+  state.fieldPage = 0;
+  state.fieldSearchQuery = "";
   renderAll();
 });
 
 elements.clearFieldsButton.addEventListener("click", () => {
   state.selectedFields.clear();
+  state.fieldPage = 0;
+  state.fieldSearchQuery = "";
   renderAll();
 });
 
@@ -648,7 +736,36 @@ elements.resetMappingsButton.addEventListener("click", () => {
 
 elements.copyButton.addEventListener("click", copyOutput);
 elements.downloadButton.addEventListener("click", downloadOutput);
-elements.addCustomFieldButton.addEventListener("click", addCustomField);
 
-resetRecommendedFields();
-renderAll();
+elements.fieldSearch.addEventListener("input", () => {
+  state.fieldSearchQuery = elements.fieldSearch.value;
+  state.fieldPage = 0;
+  renderFieldTiles();
+});
+
+elements.fieldPrevButton.addEventListener("click", () => {
+  state.fieldPage--;
+  renderFieldTiles();
+});
+
+elements.fieldNextButton.addEventListener("click", () => {
+  state.fieldPage++;
+  renderFieldTiles();
+});
+
+elements.nextButton.addEventListener("click", () => goToStep(2));
+elements.backButton1.addEventListener("click", () => goToStep(1));
+elements.backButton2.addEventListener("click", () => goToStep(2));
+elements.finishButton.addEventListener("click", () => goToStep(3));
+[1, 2, 3].forEach((n) => {
+  elements[`stepNav${n}`].addEventListener("click", () => goToStep(n));
+});
+
+async function init() {
+  await loadSchemaData();
+  resetRecommendedFields();
+  goToStep(1);
+  renderAll();
+}
+
+init();
