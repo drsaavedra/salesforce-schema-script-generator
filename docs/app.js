@@ -108,7 +108,10 @@ const elements = {
   mappingForm: document.querySelector("#mappingForm"),
   scriptOutput: document.querySelector("#scriptOutput"),
   copyStatus: document.querySelector("#copyStatus"),
-  selectRecommendedButton: document.querySelector("#selectRecommendedButton"),
+  previewSchemaButton: document.querySelector("#previewSchemaButton"),
+  schemaPreviewOverlay: document.querySelector("#schemaPreviewOverlay"),
+  schemaPreviewTree: document.querySelector("#schemaPreviewTree"),
+  closePreviewButton: document.querySelector("#closePreviewButton"),
   clearFieldsButton: document.querySelector("#clearFieldsButton"),
   resetMappingsButton: document.querySelector("#resetMappingsButton"),
   copyButton: document.querySelector("#copyButton"),
@@ -289,7 +292,6 @@ function renderFieldTiles() {
           state.selectedFields.add(field.id);
           ensureMapping(field);
         }
-        state.fieldPage = 0;
         renderFieldTiles();
         renderMappings();
         renderOutput();
@@ -713,12 +715,126 @@ function downloadOutput() {
   URL.revokeObjectURL(url);
 }
 
-elements.selectRecommendedButton.addEventListener("click", () => {
-  resetRecommendedFields();
-  state.fieldPage = 0;
-  state.fieldSearchQuery = "";
-  renderAll();
-});
+function buildPreviewGraph() {
+  const graph = {
+    "@context": "https://schema.org",
+    "@type": state.schemaType,
+  };
+  for (const fieldId of state.selectedFields) {
+    const field = fieldById(fieldId) || customFieldById(fieldId);
+    if (field) applySelectedField(graph, field);
+  }
+  return graph;
+}
+
+function renderJsonTree(value) {
+  // Raw expression placeholder (used by "raw" valueType)
+  if (value !== null && typeof value === "object" && "__rawExpression" in value) {
+    const span = document.createElement("span");
+    span.className = "tree-val-string";
+    span.textContent = `"${value.__rawExpression}"`;
+    return span;
+  }
+
+  if (Array.isArray(value)) {
+    const node = document.createElement("div");
+    node.className = "tree-node";
+    const open = document.createElement("span");
+    open.className = "tree-brace";
+    open.textContent = "[";
+    node.appendChild(open);
+    if (value.length) {
+      const children = document.createElement("div");
+      children.className = "tree-children";
+      value.forEach((item, i) => {
+        const row = document.createElement("div");
+        row.className = "tree-row";
+        row.appendChild(renderJsonTree(item));
+        if (i < value.length - 1) {
+          const comma = document.createElement("span");
+          comma.className = "tree-colon";
+          comma.textContent = ",";
+          row.appendChild(comma);
+        }
+        children.appendChild(row);
+      });
+      node.appendChild(children);
+    }
+    const close = document.createElement("span");
+    close.className = "tree-brace";
+    close.textContent = "]";
+    node.appendChild(close);
+    return node;
+  }
+
+  if (value !== null && typeof value === "object") {
+    const node = document.createElement("div");
+    node.className = "tree-node";
+    const open = document.createElement("span");
+    open.className = "tree-brace";
+    open.textContent = "{";
+    node.appendChild(open);
+    const entries = Object.entries(value);
+    if (entries.length) {
+      const children = document.createElement("div");
+      children.className = "tree-children";
+      entries.forEach(([k, v], i) => {
+        const row = document.createElement("div");
+        row.className = "tree-row";
+        const key = document.createElement("span");
+        key.className = "tree-key";
+        key.textContent = `"${k}"`;
+        const colon = document.createElement("span");
+        colon.className = "tree-colon";
+        colon.textContent = ":";
+        row.appendChild(key);
+        row.appendChild(colon);
+        row.appendChild(renderJsonTree(v));
+        if (i < entries.length - 1) {
+          const comma = document.createElement("span");
+          comma.className = "tree-colon";
+          comma.textContent = ",";
+          row.appendChild(comma);
+        }
+        children.appendChild(row);
+      });
+      node.appendChild(children);
+    }
+    const close = document.createElement("span");
+    close.className = "tree-brace";
+    close.textContent = "}";
+    node.appendChild(close);
+    return node;
+  }
+
+  // Primitive
+  const span = document.createElement("span");
+  if (typeof value === "string") {
+    span.className = "tree-val-string";
+    span.textContent = `"${value}"`;
+  } else if (typeof value === "number") {
+    span.className = "tree-val-number";
+    span.textContent = String(value);
+  } else {
+    span.className = "tree-val-other";
+    span.textContent = value === null ? "null" : String(value);
+  }
+  return span;
+}
+
+function openSchemaPreview() {
+  const graph = buildPreviewGraph();
+  elements.schemaPreviewTree.replaceChildren(renderJsonTree(graph));
+  elements.schemaPreviewOverlay.hidden = false;
+  elements.closePreviewButton.focus();
+}
+
+function closeSchemaPreview() {
+  elements.schemaPreviewOverlay.hidden = true;
+  elements.previewSchemaButton.focus();
+}
+
+elements.previewSchemaButton.addEventListener("click", openSchemaPreview);
 
 elements.clearFieldsButton.addEventListener("click", () => {
   state.selectedFields.clear();
@@ -757,8 +873,12 @@ elements.nextButton.addEventListener("click", () => goToStep(2));
 elements.backButton1.addEventListener("click", () => goToStep(1));
 elements.backButton2.addEventListener("click", () => goToStep(2));
 elements.finishButton.addEventListener("click", () => goToStep(3));
-[1, 2, 3].forEach((n) => {
-  elements[`stepNav${n}`].addEventListener("click", () => goToStep(n));
+elements.closePreviewButton.addEventListener("click", closeSchemaPreview);
+elements.schemaPreviewOverlay.addEventListener("click", (e) => {
+  if (e.target === elements.schemaPreviewOverlay) closeSchemaPreview();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !elements.schemaPreviewOverlay.hidden) closeSchemaPreview();
 });
 
 async function init() {

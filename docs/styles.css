@@ -169,24 +169,19 @@ h2 {
 .steps-nav {
   align-items: center;
   display: flex;
+  justify-content: center;
   margin-bottom: 24px;
 }
 
 .step-nav-btn {
   align-items: center;
-  background: none;
-  border: none;
-  border-radius: 6px;
   color: var(--muted);
+  cursor: default;
   display: flex;
   gap: 8px;
-  min-height: auto;
   padding: 6px 10px;
-}
-
-.step-nav-btn:hover {
-  border: none;
-  color: var(--ink);
+  pointer-events: none;
+  user-select: none;
 }
 
 .step-nav-btn[aria-current="step"] {
@@ -227,10 +222,9 @@ h2 {
 
 .step-divider {
   background: var(--line);
-  flex: 1;
+  flex: none;
   height: 1px;
-  max-width: 48px;
-  min-width: 12px;
+  width: 40px;
 }
 
 /* ── Wizard steps ── */
@@ -461,6 +455,100 @@ h2 {
 .warning {
   color: var(--warn);
 }
+
+/* ── Schema Preview Modal ── */
+.schema-preview-overlay {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 200;
+}
+
+.schema-preview-overlay[hidden] {
+  display: none;
+}
+
+.schema-preview-dialog {
+  background: var(--panel);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  max-width: 680px;
+  overflow: hidden;
+  width: 90vw;
+}
+
+.schema-preview-header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.schema-preview-close {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  min-height: auto;
+  padding: 2px 6px;
+}
+
+.schema-preview-close:hover {
+  color: var(--ink);
+}
+
+.schema-preview-hint {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+  padding: 10px 20px;
+}
+
+.schema-preview-tree {
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.tree-node { margin: 0; }
+
+.tree-brace {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.tree-children {
+  padding-left: 20px;
+  border-left: 2px solid var(--line);
+  margin-left: 6px;
+}
+
+.tree-row { display: flex; gap: 4px; flex-wrap: wrap; align-items: baseline; }
+
+.tree-key { color: var(--accent-strong); }
+
+.tree-colon { color: var(--muted); }
+
+.tree-val-string { color: #b45309; }
+
+.tree-val-number { color: #0b5f59; }
+
+.tree-val-other  { color: var(--muted); }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {

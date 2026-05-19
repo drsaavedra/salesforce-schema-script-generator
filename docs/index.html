@@ -21,27 +21,27 @@
 
     <div class="wizard-container">
       <nav class="steps-nav" aria-label="Steps">
-        <button class="step-nav-btn" id="stepNav1" aria-current="step">
+        <div class="step-nav-btn" id="stepNav1" aria-current="step">
           <span class="step-num">1</span>
           <span class="step-label">Select Fields</span>
-        </button>
+        </div>
         <span class="step-divider" aria-hidden="true"></span>
-        <button class="step-nav-btn" id="stepNav2">
+        <div class="step-nav-btn" id="stepNav2">
           <span class="step-num">2</span>
           <span class="step-label">Salesforce Bindings</span>
-        </button>
+        </div>
         <span class="step-divider" aria-hidden="true"></span>
-        <button class="step-nav-btn" id="stepNav3">
+        <div class="step-nav-btn" id="stepNav3">
           <span class="step-num">3</span>
           <span class="step-label">Output</span>
-        </button>
+        </div>
       </nav>
 
       <section class="wizard-step" id="wizardStep1" aria-labelledby="step1Heading">
         <div class="step-header">
           <h2 id="step1Heading">Select Schema Fields</h2>
           <div class="step-header-actions">
-            <button type="button" id="selectRecommendedButton">Recommended</button>
+            <button type="button" id="previewSchemaButton">Preview Schema</button>
             <button type="button" id="clearFieldsButton">Clear</button>
           </div>
         </div>
@@ -86,6 +86,18 @@
         </div>
         <p class="status" id="copyStatus" role="status" aria-live="polite"></p>
       </section>
+    </div>
+
+    <!-- Schema Preview Modal -->
+    <div id="schemaPreviewOverlay" class="schema-preview-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="previewModalTitle">
+      <div class="schema-preview-dialog">
+        <div class="schema-preview-header">
+          <h2 id="previewModalTitle">Schema Preview</h2>
+          <button type="button" id="closePreviewButton" class="schema-preview-close" aria-label="Close preview">&times;</button>
+        </div>
+        <p class="schema-preview-hint">This is the JSON-LD structure that will be generated based on your selected fields. Salesforce bindings will replace the placeholder values.</p>
+        <div id="schemaPreviewTree" class="schema-preview-tree"></div>
+      </div>
     </div>
 
     <template id="schemaTypeTemplate">
