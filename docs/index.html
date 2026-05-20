@@ -15,68 +15,102 @@
       <a class="source-link" href="https://schema.org/Product" target="_blank" rel="noreferrer">schema.org/Product</a>
     </header>
 
-    <main class="workspace">
-      <section class="panel schema-panel" aria-labelledby="schema-type-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Step 1</p>
-            <h2 id="schema-type-heading">Schema Type</h2>
-          </div>
-        </div>
-        <div class="schema-grid" id="schemaTypeList"></div>
-      </section>
+    <div class="schema-bar">
+      <div class="schema-bar-inner" id="schemaTypeList"></div>
+    </div>
 
-      <section class="panel fields-panel" aria-labelledby="fields-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Step 2</p>
-            <h2 id="fields-heading">Schema Fields</h2>
-          </div>
-          <div class="panel-actions">
-            <button type="button" id="selectRecommendedButton">Recommended</button>
+    <div class="wizard-container">
+      <nav class="steps-nav" aria-label="Steps">
+        <div class="step-nav-btn" id="stepNav1" aria-current="step">
+          <span class="step-num">1</span>
+          <span class="step-label">Select Fields</span>
+        </div>
+        <span class="step-divider" aria-hidden="true"></span>
+        <div class="step-nav-btn" id="stepNav2">
+          <span class="step-num">2</span>
+          <span class="step-label">Salesforce Bindings</span>
+        </div>
+        <span class="step-divider" aria-hidden="true"></span>
+        <div class="step-nav-btn" id="stepNav3">
+          <span class="step-num">3</span>
+          <span class="step-label">Output</span>
+        </div>
+      </nav>
+
+      <div class="schema-toolbar">
+        <button type="button" id="previewSchemaButton" class="btn-preview-schema">Preview Schema</button>
+      </div>
+
+      <section class="wizard-step" id="wizardStep1" aria-labelledby="step1Heading">
+        <div class="step-header">
+          <h2 id="step1Heading">Select Schema Fields</h2>
+          <div class="step-header-actions">
+            <button type="button" id="selectAllButton">Select All</button>
+            <button type="button" id="recommendedButton">Recommended</button>
             <button type="button" id="clearFieldsButton">Clear</button>
           </div>
         </div>
-        <div class="field-list" id="fieldList"></div>
-        <div class="custom-field-row">
-          <input id="customPropertyName" type="text" placeholder="schema.org property" autocomplete="off" />
-          <input id="customPropertyField" type="text" placeholder="Product2 field API name" autocomplete="off" />
-          <select id="customPropertyType" aria-label="Custom property value type">
-            <option value="text">Text</option>
-            <option value="number">Number</option>
-            <option value="array">Array</option>
-            <option value="raw">Raw expression</option>
-          </select>
-          <button type="button" id="addCustomFieldButton">Add</button>
+        <input id="fieldSearch" class="field-search-input" type="text" placeholder="Search fields..." autocomplete="off" aria-label="Search schema fields" />
+        <div class="field-meta-row">
+          <span id="fieldCounter" class="field-counter"></span>
+          <button type="button" id="selectAllMatchingBtn" class="btn-select-matching" hidden></button>
+        </div>
+        <div class="field-tiles" id="fieldList"></div>
+
+        <div class="step-footer">
+          <span></span>
+          <button type="button" class="btn-primary" id="nextButton">Next &rarr;</button>
         </div>
       </section>
 
-      <section class="panel mapping-panel" aria-labelledby="mapping-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Step 3</p>
-            <h2 id="mapping-heading">Salesforce Bindings</h2>
-          </div>
+      <section class="wizard-step" id="wizardStep2" aria-labelledby="step2Heading" hidden>
+        <div class="step-header">
+          <h2 id="step2Heading">Salesforce Bindings</h2>
           <button type="button" id="resetMappingsButton">Reset</button>
         </div>
         <div id="mappingForm" class="mapping-form"></div>
+        <div class="step-footer">
+          <button type="button" id="backButton1">&larr; Back</button>
+          <button type="button" class="btn-primary" id="finishButton">Finish &rarr;</button>
+        </div>
       </section>
 
-      <section class="panel output-panel" aria-labelledby="output-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="step">Output</p>
-            <h2 id="output-heading">Head Markup Script</h2>
-          </div>
-          <div class="panel-actions">
-            <button type="button" id="copyButton">Copy</button>
-            <button type="button" id="downloadButton">Download</button>
+      <section class="wizard-step" id="wizardStep3" aria-labelledby="step3Heading" hidden>
+        <div class="step-header">
+          <h2 id="step3Heading">Head Markup Script</h2>
+          <div class="step-header-actions">
+            <button type="button" id="copyButton" aria-label="Copy script to clipboard">Copy</button>
+            <button type="button" id="downloadButton" aria-label="Download script as file">Download</button>
           </div>
         </div>
+        <div id="outputWarnings" class="output-warnings" aria-live="polite" aria-relevant="additions removals"></div>
+        <div class="output-options">
+          <label class="output-option-label">
+            <input type="checkbox" id="breadcrumbToggle" />
+            <span>Include BreadcrumbList</span>
+            <span class="output-option-hint">Appends a second script block using Salesforce's native <code>{!Record.BreadcrumbList}</code> expression</span>
+          </label>
+        </div>
         <textarea id="scriptOutput" spellcheck="false" aria-label="Generated script"></textarea>
+        <div class="step-footer">
+          <button type="button" id="backButton2">&larr; Edit</button>
+          <a class="validator-link" href="https://validator.schema.org/" target="_blank" rel="noreferrer">Validate on schema.org &rarr;</a>
+        </div>
         <p class="status" id="copyStatus" role="status" aria-live="polite"></p>
       </section>
-    </main>
+    </div>
+
+    <!-- Schema Preview Modal -->
+    <div id="schemaPreviewOverlay" class="schema-preview-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="previewModalTitle">
+      <div class="schema-preview-dialog">
+        <div class="schema-preview-header">
+          <h2 id="previewModalTitle">Schema Preview</h2>
+          <button type="button" id="closePreviewButton" class="schema-preview-close" aria-label="Close preview">&times;</button>
+        </div>
+        <p class="schema-preview-hint">This is the JSON-LD structure that will be generated based on your selected fields. Salesforce bindings will replace the placeholder values.</p>
+        <div id="schemaPreviewTree" class="schema-preview-tree"></div>
+      </div>
+    </div>
 
     <template id="schemaTypeTemplate">
       <button type="button" class="schema-card">
@@ -85,23 +119,8 @@
       </button>
     </template>
 
-    <template id="fieldTemplate">
-      <label class="field-row">
-        <input type="checkbox" />
-        <span>
-          <strong></strong>
-          <small></small>
-        </span>
-      </label>
-    </template>
-
-    <template id="mappingTemplate">
-      <div class="mapping-row">
-        <label></label>
-        <input type="text" autocomplete="off" />
-      </div>
-    </template>
-
+    <script src="schema-parser.js"></script>
+    <script src="constants.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
