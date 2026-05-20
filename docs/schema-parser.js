@@ -40,7 +40,6 @@ const FIELD_OVERRIDES = {
   // ProductGroup-specific
   productGroupID:     { label: "Product Group ID",   defaultSelected: true,  valueType: "text" },
   variesBy:           { label: "Varies By",          defaultSelected: true,  valueType: "text" },
-  hasVariant:         { label: "Has Variant",                                valueType: "text" },
 
   // ProductCollection-specific
   collectionSize:     { label: "Collection Size",    typeHint: "Number",     valueType: "text" },
@@ -53,6 +52,24 @@ const RECOMMENDED_ORDER = {
   ProductGroup:      ["name", "description", "image", "productGroupID", "variesBy", "brand", "offers"],
   ProductCollection: ["name", "description", "image", "brand", "offers", "collectionSize"],
 };
+
+// Fields excluded because they cannot be expressed as a Salesforce merge field
+// in Experience Builder Head Markup. See learning.md for the full reasoning.
+const FIELD_EXCLUSIONS = new Set([
+  // Requires aggregated child record data or an external review service
+  "aggregateRating", "review", "reviews",
+  // Product relationship arrays — reference other Product records, not scalar fields
+  "isRelatedTo", "isSimilarTo", "isAccessoryOrSparePartFor",
+  "isConsumableFor", "isVariantOf", "hasVariant",
+  "predecessorOf", "successorOf",
+  // QuantitativeValue types — require a nested {value, unitCode} object;
+  // a merge field can only supply a scalar
+  "depth", "height", "weight", "width",
+  // Complex nested object types with no scalar merge field equivalent
+  "potentialAction", "hasMerchantReturnPolicy", "subjectOf",
+  // Not applicable to Salesforce Commerce product data
+  "award", "awards",
+]);
 
 // ── TTL parsing ───────────────────────────────────────────────────────────────
 
@@ -129,6 +146,7 @@ function extractProperties(blocks, targetTypes) {
   const results = [];
   for (const { name, text } of blocks) {
     if (!text.includes("a rdf:Property")) continue;
+    if (FIELD_EXCLUSIONS.has(name)) continue;
     const diStart = text.indexOf(":domainIncludes");
     if (diStart === -1) continue;
     // domainIncludes ends at the next ";" (next predicate) or end of block
