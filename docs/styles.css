@@ -109,7 +109,12 @@ h2 {
   font-size: 18px;
 }
 
-.source-link {
+.header-links {
+  display: flex;
+  gap: 8px;
+}
+
+.source-link, .source-link-readme  {
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--accent-strong);
@@ -916,9 +921,13 @@ h2 {
     flex-direction: column;
   }
 
-  .source-link {
-    text-align: center;
+  .header-links {
     width: 100%;
+  }
+
+  .source-link {
+    flex: 1;
+    text-align: center;
   }
 
   .step-label {
