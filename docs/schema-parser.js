@@ -18,7 +18,7 @@ const FIELD_OVERRIDES = {
   // Core product identity
   name:               { label: "Name",                defaultField: "Name",             defaultSelected: true,  valueType: "text" },
   description:        {                               defaultField: "Description",       defaultSelected: true,  valueType: "text" },
-  image:              { defaultExpression: "{!Record.ProductMedia.ProductDetailImages}",   defaultSelected: true,  valueType: "raw" },
+  image:              { defaultExpression: "{!Record.ProductMedia.ProductDetailImages}",   defaultSelected: true,  valueType: "text" },
   sku:                { label: "SKU",                 defaultField: "StockKeepingUnit",  defaultSelected: true,  valueType: "text" },
   productID:          { label: "Product ID",          defaultField: "ProductCode",       defaultSelected: true,  valueType: "text" },
   brand:              { path: "brand.name",                                              defaultSelected: false, valueType: "brand" },

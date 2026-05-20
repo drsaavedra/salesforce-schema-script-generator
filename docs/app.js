@@ -901,7 +901,7 @@ function applySelectedField(graph, field) {
       priceCurrency: mapping.currencyExpression || "",
     };
     if (mapping.priceExpression) {
-      offer.price = rawExpression(mapping.priceExpression);
+      offer.price = mapping.priceExpression;
     }
     if (mapping.sellerName || mapping.sellerUrl) {
       offer.seller = {
@@ -1003,7 +1003,7 @@ function buildScript() {
 
   let output = `<script type="application/ld+json">\n${graphToJsonWithExpressions(graph)}\n</script>`;
   if (state.includeBreadcrumbList) {
-    output += `\n<script type="application/ld+json">\n{!Record.BreadcrumbList}\n</script>`;
+    output += `\n<script type="application/ld+json">\n"{!Record.BreadcrumbList}"\n</script>`;
   }
   return output;
 }
