@@ -1,6 +1,6 @@
-# Salesforce Commerce Schema Script Generator
+# Salesforce B2B Commerce Schema Script Generator
 
-A free, browser-based tool that generates paste-ready JSON-LD structured data scripts for Salesforce Commerce Experience Builder.
+A free, browser-based tool that generates paste-ready JSON-LD structured data scripts for Salesforce B2B Commerce Experience Builder.
 
 **[Launch the tool →](https://drsaavedra.github.io/salesforce-schema-script-generator/)**
 
@@ -8,7 +8,7 @@ A free, browser-based tool that generates paste-ready JSON-LD structured data sc
 
 ## What it does
 
-Salesforce Commerce product pages don't include structured data (JSON-LD) out of the box. Adding it manually means reading schema.org documentation, writing JSON by hand, mapping Salesforce merge expressions correctly, and repeating that process for every site and every page type.
+Salesforce B2B Commerce product pages don't include structured data (JSON-LD) out of the box. Adding it manually means reading schema.org documentation, writing JSON by hand, mapping Salesforce merge expressions correctly, and repeating that process for every site and every page type.
 
 This tool automates that. Pick the schema fields you want, map them to your Salesforce field API names, and get a ready-to-paste `<script type="application/ld+json">` block — formatted exactly as Experience Builder's Head Markup expects it.
 
@@ -18,30 +18,19 @@ This tool automates that. Pick the schema fields you want, map them to your Sale
 
 ---
 
-## Planned: ProductGroup
+## Prerequisites — Salesforce B2B Commerce SEO journey
 
-`ProductGroup` is next on the roadmap, targeting **variation master product pages** — pages in Salesforce Commerce where a single parent product (e.g. "Classic Polo") has purchasable variants that differ by attributes like color, size, or material.
+JSON-LD structured data is the final layer of Salesforce B2B Commerce SEO. Before this tool is useful, the earlier layers should already be in place:
 
-### Why ProductGroup fits Salesforce Commerce variation products
+1. **Sitemap** — Configure Salesforce B2B Commerce sitemap generation so product and category pages are included in your XML sitemap. This tells search engines what pages exist on your site.
 
-Salesforce Commerce models variation products with a **variation master** (the parent) and **variation children** (the individual SKUs). The master product holds the shared attributes — name, description, images, category — while the variants each carry their specific attribute combination. This is exactly the structure `schema.org/ProductGroup` describes: a group of products that "vary only in certain well-described ways."
+2. **Search Engine Manager** — Register your sitemap with Google Search Console and Bing Webmaster Tools via Salesforce's built-in Search Engine Manager. This submits your sitemap to the major crawlers and unlocks indexing.
 
-Google explicitly supports `ProductGroup` in their structured data guidelines for product variants, making it the right schema type for variation master PDPs.
+3. **Snapshots** — Enable Salesforce B2B Commerce Snapshot rendering so that JavaScript-rendered page content is served as pre-rendered HTML to crawlers. Without snapshots, search engines may see an empty shell instead of product content.
 
-### Planned field mapping
+4. **JSON-LD Structured Data** — Once your pages are crawlable, indexed, and rendering correctly, add structured data to help Google understand what each page represents. That is what this tool is for.
 
-The implementation will use Salesforce Commerce's out-of-the-box `ProductVariation` data model and its native merge expressions — no custom Apex or LWC required.
-
-| schema.org field | Planned expression | Notes |
-|---|---|---|
-| `name` | `{!Record.Name}` | Master product name |
-| `description` | `{!Record.Description}` | |
-| `image` | `{!Record.ProductMedia.ProductDetailImages}` | |
-| `productGroupID` | `{!Record.ProductCode}` | Unique identifier for the variation family |
-| `variesBy` | `{!Record.ProductAttributes.<VariationAttribute>}` | The attribute dimension variants differ on (e.g. Color, Size) |
-| `category` | `{!Record.ProductCategory.Name}` | |
-
-The `variesBy` field is the key differentiator — it tells Google what dimension the variants differ on. Admins enter the API name of the variation attribute field configured on their Product object (e.g. a custom `Variation_Color__c` field), and the tool wraps it as `{!Record.ProductAttributes.Variation_Color__c}`.
+See the [Salesforce B2B Commerce SEO documentation](https://help.salesforce.com/s/articleView?id=commerce.comm_seo.htm&type=5) for the official setup guide covering all four layers.
 
 ---
 
@@ -51,8 +40,8 @@ The `variesBy` field is the key differentiator — it tells Google what dimensio
 
 Choose which schema.org Product fields to include in your structured data. Fields are sourced directly from the official [schema.org Product specification](https://schema.org/Product).
 
-- Click **Recommended** to pre-select the fields most useful for e-commerce SEO (`name`, `description`, `image`, `sku`, `brand`, `offers`, `additionalProperty`)
-- Use the search bar to find a specific field
+- Click **Recommended** to pre-select the fields most useful for e-commerce SEO: `name`, `description`, `image`, `sku`, `productID`, `offers`, `brand`, `additionalProperty`
+- Use the search bar to filter fields by name or description. When results are shown, a **Select all matching** button appears to bulk-select every result at once
 - Select as many or as few fields as you need
 - Click **Next** when you're done
 
@@ -63,7 +52,7 @@ Map each selected field to a Salesforce merge expression.
 - **On mobile** — fields appear as a simple labeled form, one input per field. Complex fields like `offers` and `additionalProperty` use collapsible accordions.
 - **On tablet and desktop** — fields appear in a JSON-LD tree editor that mirrors the actual output structure, so you can see exactly where each value ends up.
 
-**Common native expressions** (these work in any standard Salesforce Commerce store):
+**Common native expressions** (these work in any standard Salesforce B2B Commerce store):
 
 | Field | Expression |
 |---|---|
@@ -77,15 +66,25 @@ Map each selected field to a Salesforce merge expression.
 
 **Custom fields** — for fields like `color`, `brand.name`, or `material`, enter the API name of the field on your Product2 object (e.g., `My_Brand__c`). The tool wraps it automatically as `{!Record.My_Brand__c}`.
 
-**Type hints** — colored badges next to each field show the expected data type. Pay attention to amber **Boolean** badges — mapping a text merge field to a boolean field produces a validation error.
+**Type hints** — colored badges next to each field show the expected data type. Pay attention to amber **Boolean** and **Number** badges — mapping a text merge expression to these types produces a validation error.
+
+**Offers** — if you include `offers`, the tool exposes sub-fields for price, currency, seller name, seller URL, and seller type (Organization, Corporation, LocalBusiness, or Person). Price and currency have "Use default" toggles that pre-fill the native Salesforce B2B Commerce expressions (`{!Record.Offers.Price}` and `{!Record.Offers.Currency}`).
+
+**additionalProperty** — generates a `PropertyValue` array. Use the **Add property** button to define as many name/value pairs as needed; each entry maps independently to its own merge expression.
+
+**Preview Schema** — click **Preview Schema** at any point to open a live JSON tree view of your current output before moving to Step 3. Useful for catching structural issues before copying.
+
+**Reset** — click **Reset** to clear all field mappings and start Step 2 over without losing your field selections from Step 1.
 
 Click **Finish** when all your fields are mapped.
 
 ### Step 3 — Copy and paste
 
-**BreadcrumbList** — Check "Include BreadcrumbList" to append a second script block using Salesforce's native `{!Record.BreadcrumbList}` expression. This adds breadcrumb structured data automatically — no field mapping required.
+**BreadcrumbList** — Check "Include BreadcrumbList" to append a second `<script type="application/ld+json">` block using Salesforce's native `{!Record.BreadcrumbList}` expression. No field mapping required. When enabled, the output contains two separate script blocks — one for Product and one for BreadcrumbList — paste both together.
 
-The tool generates the complete script output. Click **Copy** and paste it directly into Experience Builder:
+**Warnings** — if any selected field has an empty or incomplete mapping, the tool displays a warning list above the output. Resolve all warnings before pasting to avoid malformed structured data in Experience Builder.
+
+The tool generates the complete script output. Click **Copy** to copy it to your clipboard, or **Download** to save it as `product-schema-head-markup.html`. Paste directly into Experience Builder:
 
 1. Open your Product Detail Page in Experience Builder
 2. Click the page settings gear → **Edit Head Markup**
@@ -98,7 +97,7 @@ The tool generates the complete script output. Click **Copy** and paste it direc
 
 ## Why some schema.org fields aren't listed
 
-The tool only shows fields that can be populated via Salesforce Commerce merge expressions. Fields that require aggregated data, relationship traversal, or nested objects are excluded — showing them would let admins generate structured data that looks valid but produces empty or malformed output.
+The tool only shows fields that can be populated via Salesforce B2B Commerce merge expressions. Fields that require aggregated data, relationship traversal, or nested objects are excluded — showing them would let admins generate structured data that looks valid but produces empty or malformed output.
 
 | Category | Excluded fields | Why |
 |---|---|---|
@@ -115,6 +114,33 @@ Admins who need `aggregateRating` or `review` markup are doing a custom integrat
 ## Validating your output
 
 After pasting into Experience Builder and publishing, validate the page's structured data with the [Schema.org Validator](https://validator.schema.org/). Enter your page URL to check that Google can read the markup correctly.
+
+---
+
+## Planned: ProductGroup
+
+`ProductGroup` is next on the roadmap, targeting **variation master product pages** — pages in Salesforce B2B Commerce where a single parent product (e.g. "Classic Polo") has purchasable variants that differ by attributes like color, size, or material.
+
+### Why ProductGroup fits Salesforce B2B Commerce variation products
+
+Salesforce B2B Commerce models variation products with a **variation master** (the parent) and **variation children** (the individual SKUs). The master product holds the shared attributes — name, description, images, category — while the variants each carry their specific attribute combination. This is exactly the structure `schema.org/ProductGroup` describes: a group of products that "vary only in certain well-described ways."
+
+Google explicitly supports `ProductGroup` in their structured data guidelines for product variants, making it the right schema type for variation master PDPs.
+
+### Planned field mapping
+
+The implementation will use Salesforce B2B Commerce's out-of-the-box `ProductVariation` data model and its native merge expressions — no custom Apex or LWC required.
+
+| schema.org field | Planned expression | Notes |
+|---|---|---|
+| `name` | `{!Record.Name}` | Master product name |
+| `description` | `{!Record.Description}` | |
+| `image` | `{!Record.ProductMedia.ProductDetailImages}` | |
+| `productGroupID` | `{!Record.ProductCode}` | Unique identifier for the variation family |
+| `variesBy` | `{!Record.ProductAttributes.<VariationAttribute>}` | The attribute dimension variants differ on (e.g. Color, Size) |
+| `category` | `{!Record.ProductCategory.Name}` | |
+
+The `variesBy` field is the key differentiator — it tells Google what dimension the variants differ on. Admins enter the API name of the variation attribute field configured on their Product object (e.g. a custom `Variation_Color__c` field), and the tool wraps it as `{!Record.ProductAttributes.Variation_Color__c}`.
 
 ---
 
@@ -187,6 +213,26 @@ docs/
 tests/
   qa-*.md           — static analysis test cases (run via Claude Code subagents)
 ```
+
+---
+
+## Known limitations
+
+- **Salesforce B2B Commerce only** — merge expressions like `{!Record.Name}` are specific to Salesforce B2B Commerce. This tool does not generate markup for B2C Commerce or other Salesforce clouds.
+- **One schema type at a time** — the tool generates one `Product` script per page. `ProductGroup` support is planned but not yet available.
+- **No configuration save/load** — there is no way to save a mapping configuration and reload it in a future session. Each session starts fresh.
+- **No batch generation** — the tool generates output for one page type per session.
+- **BreadcrumbList output is fixed** — the BreadcrumbList block uses Salesforce's native `{!Record.BreadcrumbList}` expression and cannot be customized.
+- **aggregateRating and review require a custom integration** — these fields depend on aggregated child data that cannot be expressed as a single merge expression and are intentionally excluded from the field list.
+
+---
+
+## References
+
+- [Salesforce B2B Commerce SEO documentation](https://help.salesforce.com/s/articleView?id=commerce.comm_seo.htm&type=5) — official guide covering sitemaps, search engine registration, snapshots, and structured data
+- [schema.org Product specification](https://schema.org/Product)
+- [Google structured data guidelines — Product](https://developers.google.com/search/docs/appearance/structured-data/product)
+- [Schema.org Validator](https://validator.schema.org/)
 
 ---
 
