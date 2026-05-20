@@ -89,7 +89,8 @@ function parseTTLBlocks(ttl) {
 
   for (const line of ttl.split("\n")) {
     if (line.startsWith("#")) continue;
-    const m = line.match(/^:(\w+)\s+a\s+/);
+    // v30+ uses "schema:Name a" instead of ":Name a" — match both
+    const m = line.match(/^:(\w+)\s+a\s+/) || line.match(/^schema:(\w+)\s+a\s+/);
     if (m) {
       flush();
       name = m[1];
@@ -109,11 +110,12 @@ function buildClassMap(blocks) {
   for (const { name, text } of blocks) {
     if (!text.includes("a rdfs:Class")) continue;
     const parents = [];
-    const re = /:subClassOf\s+([^;.]+)/g;
+    // v30+ uses rdfs:subClassOf; older versions used schema:subClassOf (:subClassOf)
+    const re = /(?:rdfs:|:)subClassOf\s+([^;.]+)/g;
     let m;
     while ((m = re.exec(text)) !== null) {
-      for (const ref of m[1].match(/:(\w+)/g) || []) {
-        parents.push(ref.slice(1)); // strip leading ":"
+      for (const ref of m[1].match(/(?:schema|):(\w+)/g) || []) {
+        parents.push(ref.split(":").pop()); // strip prefix, keep name
       }
     }
     map[name] = parents;
@@ -143,12 +145,14 @@ function extractProperties(blocks, targetTypes) {
   for (const { name, text } of blocks) {
     if (!text.includes("a rdf:Property")) continue;
     if (FIELD_EXCLUSIONS.has(name)) continue;
-    const diStart = text.indexOf(":domainIncludes");
+    // v30+ uses "schema:domainIncludes"; older versions used ":domainIncludes"
+    const diStart = text.search(/:domainIncludes|schema:domainIncludes/);
     if (diStart === -1) continue;
     // domainIncludes ends at the next ";" (next predicate) or end of block
     const diEnd = text.indexOf(";", diStart);
     const domainStr = diEnd > -1 ? text.slice(diStart, diEnd) : text.slice(diStart);
-    if (![...targetTypes].some((t) => domainStr.includes(`:${t}`))) continue;
+    // Match both ":Product" (old) and "schema:Product" (v30+)
+    if (![...targetTypes].some((t) => new RegExp(`(?:schema:)?:?${t}\\b`).test(domainStr))) continue;
     const tripleMatch = text.match(/rdfs:comment\s+"""([\s\S]*?)"""/);
     const singleMatch = text.match(/rdfs:comment\s+"((?:[^"\\]|\\.)*)"/);
     const raw = tripleMatch ? tripleMatch[1] : singleMatch ? singleMatch[1] : "";

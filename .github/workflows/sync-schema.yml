@@ -36,8 +36,9 @@ jobs:
         if: steps.latest.outputs.version != steps.stored.outputs.stored
         run: |
           VERSION="${{ steps.latest.outputs.version }}"
+          VERSION_NUM="${VERSION#v}"
           curl -L -f -o docs/data/schema.ttl \
-            "https://schema.org/version/${VERSION}/schemaorg-current-https.ttl"
+            "https://schema.org/version/${VERSION_NUM}/schemaorg-current-https.ttl"
           echo "$VERSION" > .schema-version
           echo "Downloaded schema.ttl at version $VERSION"
 
