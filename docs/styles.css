@@ -943,7 +943,7 @@ h2 {
     word-break: break-word;
   }
 
-  .step-header {
+  .step-header:has(.step-header-actions) {
     align-items: flex-start;
     flex-direction: column;
   }
