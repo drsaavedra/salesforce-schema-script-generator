@@ -723,7 +723,7 @@ function renderPropertyValueMappings(field, mapping, container) {
   addBtn.type = "button";
   addBtn.className = "btn-add-entry";
   addBtn.textContent = "+ Add another property";
-  addBtn.addEventListener("click", () => { mapping.entries.push({ label: "", expression: "" }); renderMappings(); });
+  addBtn.addEventListener("click", () => { mapping.entries.push({ label: "", expression: "" }); renderMappings(); renderOutput(); });
   container.appendChild(addBtn);
 }
 
@@ -1068,6 +1068,69 @@ function renderOutput() {
   renderWarnings();
 }
 
+function detectOutputErrors(text) {
+  const errors = [];
+
+  // 1. Full JSON structure check — catches removed quotes on @context, @type,
+  //    field names, and any string value, not just merge expressions.
+  const stripped = text
+    .replace(/<script[^>]*>/gi, "")
+    .replace(/<\/script>/gi, "")
+    .trim();
+  const sanitized = stripped.replace(/\{![^}]+\}/g, '__expr__');
+  try {
+    JSON.parse(sanitized);
+  } catch {
+    errors.push('Output contains invalid JSON — a quote mark may have been removed from a field name or value (e.g. "@context", "@type").');
+  }
+
+  // 2. Specific merge expression check — flags which {!...} lost its quotes.
+  const re = /\{![^}]+\}/g;
+  const found = new Set();
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const before = text[m.index - 1];
+    const after  = text[m.index + m[0].length];
+    if (before !== '"' || after !== '"') found.add(m[0]);
+  }
+  for (const expr of found) {
+    errors.push(`Unquoted expression: ${expr} — a surrounding quote may have been removed.`);
+  }
+
+  // 3. Missing closing } — e.g. {!Record.StockKeepingUnit inside a string.
+  //    JSON.parse won't catch this because the string is still valid JSON.
+  const missingCloseRe = /\{![^}"]+(?=")/g;
+  let mm;
+  while ((mm = missingCloseRe.exec(text)) !== null) {
+    errors.push(`Malformed expression: ${mm[0]} — missing closing }.`);
+  }
+
+  // 4. Missing opening {! — e.g. !Record.StockKeepingUnit} inside a string.
+  //    Also valid JSON so JSON.parse won't catch it.
+  const missingOpenRe = /(?<!\{)!Record\.[^"{}]+}/g;
+  let mo;
+  while ((mo = missingOpenRe.exec(text)) !== null) {
+    errors.push(`Malformed expression: ${mo[0]} — missing opening {!.`);
+  }
+
+  return errors;
+}
+
+function showOutputErrors(errors) {
+  let list = elements.outputWarnings.querySelector("ul");
+  if (!list) {
+    list = document.createElement("ul");
+    list.className = "warning-list";
+    elements.outputWarnings.appendChild(list);
+  }
+  for (const msg of errors) {
+    const item = document.createElement("li");
+    item.textContent = msg;
+    list.appendChild(item);
+  }
+  elements.outputWarnings.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 async function loadSchemaData() {
   state.schemaLoading = true;
   state.schemaError = null;
@@ -1124,6 +1187,12 @@ function clearStatusSoon() {
 }
 
 async function copyOutput() {
+  renderWarnings();
+  const errors = detectOutputErrors(elements.scriptOutput.value);
+  if (errors.length) {
+    showOutputErrors(errors);
+    return;
+  }
   elements.scriptOutput.select();
   try {
     await navigator.clipboard.writeText(elements.scriptOutput.value);
@@ -1140,6 +1209,12 @@ async function copyOutput() {
 }
 
 function downloadOutput() {
+  renderWarnings();
+  const errors = detectOutputErrors(elements.scriptOutput.value);
+  if (errors.length) {
+    showOutputErrors(errors);
+    return;
+  }
   const blob = new Blob([elements.scriptOutput.value], { type: "text/html" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

@@ -189,11 +189,11 @@ Each test file is self-contained with instructions for which source files to rea
 | File | Scope | Cases |
 |---|---|---|
 | `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output | 15 |
-| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser | 18 |
+| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser, output structure validation | 27 |
 | `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases | 23 |
 | `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer | 30 |
 
-All 86 test cases must pass before merging to `main`.
+All 95 test cases must pass before merging to `main`.
 
 ---
 

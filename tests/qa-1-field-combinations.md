@@ -75,5 +75,5 @@ Deselect a field in Step 1, go to Step 2, confirm that field's row is gone from 
 **Expected:** `renderMappings()` only renders fields present in `state.selectedFields`.
 
 ### TC1-15 — BreadcrumbList in output
-When `state.includeBreadcrumbList` is true, `buildScript()` should append a second `<script>` block.  
-**Expected:** Output contains exactly two `<script type="application/ld+json">` blocks.
+When `state.includeBreadcrumbList` is true, `buildScript()` wraps both the Product and BreadcrumbList objects in a JSON array inside a single `<script>` block.  
+**Expected:** Output contains exactly one `<script type="application/ld+json">` block whose content is a JSON array with two elements: the Product object and a BreadcrumbList object with `itemListElement: "{!Record.BreadcrumbList}"`.
