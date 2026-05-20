@@ -80,7 +80,7 @@ Click **Finish** when all your fields are mapped.
 
 ### Step 3 — Copy and paste
 
-**BreadcrumbList** — Check "Include BreadcrumbList" to append a second `<script type="application/ld+json">` block using Salesforce's native `{!Record.BreadcrumbList}` expression. No field mapping required. When enabled, the output contains two separate script blocks — one for Product and one for BreadcrumbList — paste both together.
+**BreadcrumbList** — Check "Include BreadcrumbList" to combine Product and BreadcrumbList into a single `<script type="application/ld+json">` block as a JSON array, following the [Salesforce structured data format](https://help.salesforce.com/s/articleView?id=commerce.comm_seo_structured_data.htm&type=5). The BreadcrumbList entry uses `{!Record.BreadcrumbList}` as the `itemListElement` value — no field mapping required.
 
 **Warnings** — if any selected field has an empty or incomplete mapping, the tool displays a warning list above the output. Resolve all warnings before pasting to avoid malformed structured data in Experience Builder.
 
@@ -230,6 +230,7 @@ tests/
 ## References
 
 - [Salesforce B2B Commerce SEO documentation](https://help.salesforce.com/s/articleView?id=commerce.comm_seo.htm&type=5) — official guide covering sitemaps, search engine registration, snapshots, and structured data
+- [Salesforce B2B Commerce structured data format](https://help.salesforce.com/s/articleView?id=commerce.comm_seo_structured_data.htm&type=5) — official merge expression reference and JSON-LD output format
 - [schema.org Product specification](https://schema.org/Product)
 - [Google structured data guidelines — Product](https://developers.google.com/search/docs/appearance/structured-data/product)
 - [Schema.org Validator](https://validator.schema.org/)

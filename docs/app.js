@@ -1001,11 +1001,19 @@ function buildScript() {
     }
   }
 
-  let output = `<script type="application/ld+json">\n${graphToJsonWithExpressions(graph)}\n</script>`;
-  if (state.includeBreadcrumbList) {
-    output += `\n<script type="application/ld+json">\n"{!Record.BreadcrumbList}"\n</script>`;
+  const productJson = graphToJsonWithExpressions(graph);
+
+  if (!state.includeBreadcrumbList) {
+    return `<script type="application/ld+json">\n${productJson}\n</script>`;
   }
-  return output;
+
+  const breadcrumbJson = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: "{!Record.BreadcrumbList}",
+  }, null, 2);
+
+  return `<script type="application/ld+json">\n[\n${productJson},\n${breadcrumbJson}\n]\n</script>`;
 }
 
 function buildWarnings() {
@@ -1259,15 +1267,12 @@ function openSchemaPreview() {
     divider.className = "schema-preview-block-divider";
     divider.textContent = "BreadcrumbList";
 
-    const exprNode = document.createElement("div");
-    exprNode.className = "tree-node";
-    const exprSpan = document.createElement("span");
-    exprSpan.className = "tree-val-string";
-    exprSpan.textContent = "{!Record.BreadcrumbList}";
-    exprNode.appendChild(exprSpan);
-
     elements.schemaPreviewTree.appendChild(divider);
-    elements.schemaPreviewTree.appendChild(exprNode);
+    elements.schemaPreviewTree.appendChild(renderJsonTree({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: "{!Record.BreadcrumbList}",
+    }));
   }
 
   elements.schemaPreviewOverlay.hidden = false;
