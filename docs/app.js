@@ -12,6 +12,7 @@ const state = {
   selectedFields: new Set(),
   mappings: {},
   customFields: [],
+  closedMappings: new Set(),
   includeBreadcrumbList: false,
 };
 
@@ -104,8 +105,12 @@ function ensureMapping(field) {
 
 function resetRecommendedFields() {
   const recommended = currentSchema().fields.filter((field) => field.defaultSelected);
-  state.selectedFields = new Set(recommended.map((field) => field.id));
+  // Remove schema-defined fields from selection but preserve any custom field selections
+  for (const field of currentSchema().fields) {
+    state.selectedFields.delete(field.id);
+  }
   for (const field of recommended) {
+    state.selectedFields.add(field.id);
     state.mappings[field.id] = defaultMapping(field);
   }
 }
@@ -127,6 +132,7 @@ function renderSchemaTypes() {
       state.schemaType = schemaType;
       state.fieldSearchQuery = "";
       state.mappings = {};
+      state.closedMappings = new Set();
       resetRecommendedFields();
       goToStep(1);
       renderAll();
@@ -590,7 +596,248 @@ function appendTreeObjectField(parent, field, mapping, defaultType, typeOptions)
   inner.appendChild(nameRow);
 }
 
+// ── Form view (mobile) ──
+
+function isMobileView() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function addInputRow({ container, id, label, value, disabled = false, placeholder, onInput }) {
+  const template = document.querySelector("#mappingTemplate");
+  const row = template.content.firstElementChild.cloneNode(true);
+  const input = row.querySelector("input");
+  row.querySelector("label").textContent = label;
+  row.dataset.static = disabled ? "true" : "false";
+  input.id = id;
+  input.value = value || "";
+  input.disabled = disabled;
+  if (placeholder) input.placeholder = placeholder;
+  input.addEventListener("input", () => { onInput(input.value); renderOutput(); });
+  container.appendChild(row);
+}
+
+function renderUseDefaultRow(container, cbId, checked, onToggle) {
+  const row = document.createElement("div");
+  row.className = "use-default-row";
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.id = cbId;
+  cb.checked = checked;
+  const label = document.createElement("label");
+  label.htmlFor = cbId;
+  label.textContent = "Use default";
+  row.appendChild(cb);
+  row.appendChild(label);
+  container.appendChild(row);
+  cb.addEventListener("change", () => onToggle(cb.checked));
+  return cb;
+}
+
+function renderOfferMappings(field, mapping, container) {
+  const isPriceDefaulted = mapping.useDefaultPrice !== false;
+  const priceGroup = document.createElement("div");
+  priceGroup.className = "field-binding-group";
+  addInputRow({
+    container: priceGroup,
+    id: `${field.id}-priceExpression`,
+    label: "Offer price",
+    value: isPriceDefaulted ? DEFAULT_OFFER.priceExpression : (mapping.priceExpression || ""),
+    placeholder: isPriceDefaulted ? "" : DEFAULT_OFFER.priceExpression,
+    disabled: isPriceDefaulted,
+    onInput: (value) => { mapping.priceExpression = value; },
+  });
+  renderUseDefaultRow(priceGroup, `${field.id}-useDefaultPrice`, isPriceDefaulted, (checked) => {
+    mapping.useDefaultPrice = checked;
+    if (checked) mapping.priceExpression = DEFAULT_OFFER.priceExpression;
+    else mapping.priceExpression = "";
+    renderMappings();
+    renderOutput();
+  });
+  container.appendChild(priceGroup);
+
+  const isCurrencyDefaulted = mapping.useDefaultCurrency !== false;
+  const currGroup = document.createElement("div");
+  currGroup.className = "field-binding-group";
+  addInputRow({
+    container: currGroup,
+    id: `${field.id}-currencyExpression`,
+    label: "Offer currency",
+    value: isCurrencyDefaulted ? DEFAULT_OFFER.currencyExpression : (mapping.currencyExpression || ""),
+    placeholder: isCurrencyDefaulted ? "" : DEFAULT_OFFER.currencyExpression,
+    disabled: isCurrencyDefaulted,
+    onInput: (value) => { mapping.currencyExpression = value; },
+  });
+  renderUseDefaultRow(currGroup, `${field.id}-useDefaultCurrency`, isCurrencyDefaulted, (checked) => {
+    mapping.useDefaultCurrency = checked;
+    if (checked) mapping.currencyExpression = DEFAULT_OFFER.currencyExpression;
+    else mapping.currencyExpression = "";
+    renderMappings();
+    renderOutput();
+  });
+  container.appendChild(currGroup);
+
+  addInputRow({ container, id: `${field.id}-sellerName`, label: "Seller name", value: mapping.sellerName, onInput: (v) => { mapping.sellerName = v; } });
+  addInputRow({ container, id: `${field.id}-sellerUrl`, label: "Seller URL", value: mapping.sellerUrl, onInput: (v) => { mapping.sellerUrl = v; } });
+}
+
+function renderPropertyValueMappings(field, mapping, container) {
+  const template = document.querySelector("#mappingTemplate");
+  mapping.entries.forEach((entry, idx) => {
+    const group = document.createElement("div");
+    group.className = "property-group";
+    const header = document.createElement("div");
+    header.className = "property-group-header";
+    const headerLabel = document.createElement("span");
+    headerLabel.textContent = `Property ${idx + 1}`;
+    header.appendChild(headerLabel);
+    if (mapping.entries.length > 1) {
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn-remove";
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => { mapping.entries.splice(idx, 1); renderMappings(); renderOutput(); });
+      header.appendChild(removeBtn);
+    }
+    group.appendChild(header);
+
+    const nameRow = template.content.firstElementChild.cloneNode(true);
+    nameRow.querySelector("label").textContent = "Property name";
+    const nameInput = nameRow.querySelector("input");
+    nameInput.id = `${field.id}-label-${idx}`;
+    nameInput.value = entry.label;
+    nameInput.addEventListener("input", () => { entry.label = nameInput.value; renderOutput(); });
+    group.appendChild(nameRow);
+
+    const fieldRow = template.content.firstElementChild.cloneNode(true);
+    fieldRow.querySelector("label").textContent = "Value";
+    const fieldInput = fieldRow.querySelector("input");
+    fieldInput.id = `${field.id}-expression-${idx}`;
+    fieldInput.value = entry.expression || "";
+    fieldInput.placeholder = "{!Record.FieldApiName}";
+    fieldInput.addEventListener("input", () => { entry.expression = fieldInput.value; renderOutput(); });
+    group.appendChild(fieldRow);
+    container.appendChild(group);
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn-add-entry";
+  addBtn.textContent = "+ Add another property";
+  addBtn.addEventListener("click", () => { mapping.entries.push({ label: "", expression: "" }); renderMappings(); });
+  container.appendChild(addBtn);
+}
+
+function renderGenericMapping(field, mapping, container) {
+  if (field.defaultExpression !== undefined) {
+    const isDefaulted = mapping.useDefault !== false;
+    const group = document.createElement("div");
+    group.className = "field-binding-group";
+    addInputRow({
+      container: group,
+      id: `${field.id}-expression`,
+      label: field.label,
+      value: isDefaulted ? field.defaultExpression : (mapping.expression || ""),
+      placeholder: isDefaulted ? "" : field.defaultExpression,
+      disabled: isDefaulted,
+      onInput: (value) => { mapping.expression = value; },
+    });
+    renderUseDefaultRow(group, `${field.id}-useDefault`, isDefaulted, (checked) => {
+      mapping.useDefault = checked;
+      if (checked) mapping.expression = field.defaultExpression;
+      else mapping.expression = "";
+      renderMappings();
+      renderOutput();
+    });
+    container.appendChild(group);
+    return;
+  }
+  if (field.valueType === "expression" || field.valueType === "raw") {
+    addInputRow({ container, id: `${field.id}-expression`, label: field.label, value: mapping.expression || "", onInput: (v) => { mapping.expression = v; } });
+    return;
+  }
+  addInputRow({
+    container,
+    id: `${field.id}-expression`,
+    label: field.label,
+    value: mapping.expression || "",
+    placeholder: field.defaultField ? `{!Record.${field.defaultField}}` : "{!Record.FieldApiName}",
+    onInput: (value) => { mapping.expression = value; },
+  });
+}
+
+function mappingSummary(field, mapping) {
+  if (field.valueType === "offer") return mapping.priceExpression || DEFAULT_OFFER.priceExpression;
+  if (field.valueType === "propertyValue") {
+    const count = (mapping.entries || []).length;
+    return `${count} propert${count === 1 ? "y" : "ies"}`;
+  }
+  return "";
+}
+
+function renderFlatMappings() {
+  elements.mappingForm.replaceChildren();
+  const selected = allFields().filter((f) => state.selectedFields.has(f.id));
+  if (!selected.length) {
+    const empty = document.createElement("p");
+    empty.className = "status warning";
+    empty.textContent = "Select at least one schema field to configure bindings.";
+    elements.mappingForm.appendChild(empty);
+    return;
+  }
+  const banner = document.createElement("p");
+  banner.className = "mapping-banner";
+  banner.innerHTML = "Enter a Salesforce merge field like <code>{!Record.Name}</code>, or a static value for any field.";
+  elements.mappingForm.appendChild(banner);
+
+  for (const field of selected) {
+    const mapping = ensureMapping(field);
+    const needsAccordion = field.valueType === "offer" || field.valueType === "propertyValue";
+    if (needsAccordion) {
+      const isClosed = state.closedMappings.has(field.id);
+      const accordion = document.createElement("div");
+      accordion.className = "mapping-accordion" + (isClosed ? " is-closed" : "");
+      const headerBtn = document.createElement("button");
+      headerBtn.type = "button";
+      headerBtn.className = "mapping-accordion-header";
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "mapping-accordion-title";
+      titleSpan.textContent = field.label;
+      const summarySpan = document.createElement("span");
+      summarySpan.className = "mapping-accordion-summary";
+      summarySpan.textContent = mappingSummary(field, mapping);
+      const chevron = document.createElement("span");
+      chevron.className = "mapping-accordion-chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      chevron.textContent = "▼";
+      headerBtn.appendChild(titleSpan);
+      headerBtn.appendChild(summarySpan);
+      headerBtn.appendChild(chevron);
+      accordion.appendChild(headerBtn);
+      const body = document.createElement("div");
+      body.className = "mapping-accordion-body";
+      accordion.appendChild(body);
+      headerBtn.addEventListener("click", () => {
+        if (state.closedMappings.has(field.id)) {
+          state.closedMappings.delete(field.id);
+          accordion.classList.remove("is-closed");
+        } else {
+          state.closedMappings.add(field.id);
+          accordion.classList.add("is-closed");
+        }
+      });
+      if (field.valueType === "offer") renderOfferMappings(field, mapping, body);
+      else renderPropertyValueMappings(field, mapping, body);
+      elements.mappingForm.appendChild(accordion);
+    } else {
+      renderGenericMapping(field, mapping, elements.mappingForm);
+    }
+  }
+}
+
+// ── Tree mapping editor ──
+
 function renderMappings() {
+  if (isMobileView()) { renderFlatMappings(); return; }
   elements.mappingForm.replaceChildren();
   const selected = allFields().filter((f) => state.selectedFields.has(f.id));
 
@@ -651,9 +898,11 @@ function applySelectedField(graph, field) {
   if (field.valueType === "offer") {
     const offer = {
       "@type": mapping.offerType || DEFAULT_OFFER.offerType,
-      price: rawExpression(mapping.priceExpression || ""),
       priceCurrency: mapping.currencyExpression || "",
     };
+    if (mapping.priceExpression) {
+      offer.price = rawExpression(mapping.priceExpression);
+    }
     if (mapping.sellerName || mapping.sellerUrl) {
       offer.seller = {
         "@type": mapping.sellerType || DEFAULT_OFFER.sellerType,
@@ -702,13 +951,16 @@ function applySelectedField(graph, field) {
   }
 
   if (field.valueType === "raw") {
-    graph[field.path] = rawExpression(value);
+    // Skip empty raw fields — emitting null is invalid schema.org
+    if (value) graph[field.path] = rawExpression(value);
     return;
   }
 
   if (field.valueType === "number") {
+    if (!value) return;
     const num = Number(value);
-    graph[field.path] = Number.isNaN(num) ? value : num;
+    // Non-numeric values (e.g. merge expressions) emit unquoted via rawExpression
+    graph[field.path] = Number.isNaN(num) ? rawExpression(value) : num;
     return;
   }
 
@@ -888,7 +1140,7 @@ function downloadOutput() {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 function buildPreviewGraph() {
@@ -1069,6 +1321,7 @@ elements.resetMappingsButton.addEventListener("click", () => {
 elements.breadcrumbToggle.addEventListener("change", () => {
   state.includeBreadcrumbList = elements.breadcrumbToggle.checked;
   renderOutput();
+  if (!elements.schemaPreviewOverlay.hidden) openSchemaPreview();
 });
 elements.copyButton.addEventListener("click", copyOutput);
 elements.downloadButton.addEventListener("click", downloadOutput);
@@ -1088,6 +1341,10 @@ elements.schemaPreviewOverlay.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !elements.schemaPreviewOverlay.hidden) closeSchemaPreview();
+});
+
+window.matchMedia("(max-width: 640px)").addEventListener("change", () => {
+  if (state.currentStep === 2) renderMappings();
 });
 
 async function init() {

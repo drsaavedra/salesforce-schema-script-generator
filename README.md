@@ -58,7 +58,10 @@ Choose which schema.org Product fields to include in your structured data. Field
 
 ### Step 2 — Salesforce bindings
 
-Map each selected field to a Salesforce merge expression. The editor mirrors the actual JSON-LD structure so you can see exactly where each value ends up.
+Map each selected field to a Salesforce merge expression.
+
+- **On mobile** — fields appear as a simple labeled form, one input per field. Complex fields like `offers` and `additionalProperty` use collapsible accordions.
+- **On tablet and desktop** — fields appear in a JSON-LD tree editor that mirrors the actual output structure, so you can see exactly where each value ends up.
 
 **Common native expressions** (these work in any standard Salesforce Commerce store):
 
@@ -139,7 +142,32 @@ Then open `http://localhost:8000` (or whatever port your server uses).
 
 Field definitions are parsed at load time from the official [schema.org Turtle vocabulary file](https://schema.org/version/latest/schemaorg-current-https.ttl). The tool walks the full `rdfs:subClassOf` inheritance chain (e.g., `Product → Thing`) to collect all applicable properties.
 
-A GitHub Actions workflow runs every Monday and pulls any new schema.org releases automatically — so the field list stays current without manual updates.
+The bundled `data/schema.ttl` is a pinned, tested release of the schema.org vocabulary. It is updated manually when a new schema.org version has been validated against the tool — automated syncs were removed after a breaking format change in schema.org v30 was discovered silently in production.
+
+---
+
+## Testing
+
+The `tests/` directory contains a static code analysis QA suite. Tests are run before every release using Claude Code subagents — no test runner or build step required.
+
+### How to run
+
+Open Claude Code in this repo and send a prompt like:
+
+> Spawn 4 subagents in parallel, one per file in `tests/`. Each agent should read its test file and the source files in `docs/`, trace the code statically for each test case, and report PASS or FAIL with severity, affected function/line, and expected vs actual behaviour.
+
+Each test file is self-contained with instructions for which source files to read.
+
+### Test files
+
+| File | Scope | Cases |
+|---|---|---|
+| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output | 15 |
+| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser | 18 |
+| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases | 23 |
+| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer | 30 |
+
+All 86 test cases must pass before merging to `main`.
 
 ---
 
@@ -155,7 +183,9 @@ docs/
   schema-parser.js  — schema.org TTL parsing logic
   app.js            — UI state, rendering, event handling
   data/
-    schema.ttl      — bundled schema.org vocabulary (auto-updated)
+    schema.ttl      — bundled schema.org vocabulary (pinned, manually updated)
+tests/
+  qa-*.md           — static analysis test cases (run via Claude Code subagents)
 ```
 
 ---

@@ -278,11 +278,15 @@ h2 {
 
 .step-footer {
   align-items: center;
+  background: var(--panel);
   border-top: 1px solid var(--line);
+  bottom: 0;
   display: flex;
   justify-content: space-between;
   margin-top: 24px;
-  padding-top: 20px;
+  padding: 16px 0 20px;
+  position: sticky;
+  z-index: 10;
 }
 
 .btn-primary {
@@ -431,6 +435,144 @@ h2 {
   font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
   font-size: 12px;
   padding: 1px 5px;
+}
+
+/* ── Form view (mobile) ── */
+.field-binding-group {
+  display: grid;
+  gap: 6px;
+}
+
+.use-default-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.use-default-row input[type="checkbox"] {
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 16px;
+  min-height: auto;
+  padding: 0;
+  width: 16px;
+}
+
+.use-default-row label {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mapping-row {
+  display: grid;
+  gap: 7px;
+}
+
+.mapping-row label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mapping-row[data-static="true"] input {
+  background: #f4f6f5;
+  color: #495650;
+}
+
+.mapping-row input::placeholder {
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  font-style: italic;
+}
+
+/* ── Property group ── */
+.property-group {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.property-group-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.property-group-header span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ── Mapping accordion ── */
+.mapping-accordion {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mapping-accordion-header {
+  align-items: center;
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: auto;
+  padding: 12px 16px;
+  text-align: left;
+  user-select: none;
+  width: 100%;
+}
+
+.mapping-accordion-header:hover {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.mapping-accordion-title {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mapping-accordion-summary {
+  color: var(--muted);
+  flex: 1;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mapping-accordion-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+
+.mapping-accordion.is-closed .mapping-accordion-chevron {
+  transform: rotate(-90deg);
+}
+
+.mapping-accordion-body {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.mapping-accordion.is-closed .mapping-accordion-body {
+  display: none;
 }
 
 .btn-remove {
@@ -783,8 +925,22 @@ h2 {
     display: none;
   }
 
+  /* Tiles: drop to 2 columns, auto height, prevent overflow */
   .field-tiles {
+    grid-auto-rows: auto;
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .field-tile {
+    min-height: 70px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .tile-body strong,
+  .tile-body small {
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .step-header {
@@ -794,6 +950,11 @@ h2 {
 
   textarea {
     min-height: 250px;
+  }
+
+  /* Preview Schema button: center on mobile instead of right-aligning */
+  .schema-toolbar {
+    justify-content: center;
   }
 }
 
