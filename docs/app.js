@@ -6,7 +6,6 @@ const RAW_TOKEN_PREFIX = "__SCHEMA_GENERATOR_RAW_";
 const state = {
   schemaType: "Product",
   currentStep: 1,
-  fieldPage: 0,
   fieldSearchQuery: "",
   schemaLoading: false,
   schemaError: null,
@@ -36,10 +35,6 @@ const elements = {
   sourceLink: document.querySelector(".source-link"),
   outputWarnings: document.querySelector("#outputWarnings"),
   fieldSearch: document.querySelector("#fieldSearch"),
-  fieldPagination: document.querySelector("#fieldPagination"),
-  fieldPrevButton: document.querySelector("#fieldPrevButton"),
-  fieldNextButton: document.querySelector("#fieldNextButton"),
-  fieldPageIndicator: document.querySelector("#fieldPageIndicator"),
   wizardStep1: document.querySelector("#wizardStep1"),
   wizardStep2: document.querySelector("#wizardStep2"),
   wizardStep3: document.querySelector("#wizardStep3"),
@@ -130,7 +125,6 @@ function renderSchemaTypes() {
     node.setAttribute("aria-pressed", schemaType === state.schemaType ? "true" : "false");
     node.addEventListener("click", () => {
       state.schemaType = schemaType;
-      state.fieldPage = 0;
       state.fieldSearchQuery = "";
       resetRecommendedFields();
       goToStep(1);
@@ -149,7 +143,6 @@ function renderFieldMeta() {
 }
 
 function renderFieldTiles() {
-  const PAGE_SIZE = 10;
   elements.fieldSearch.value = state.fieldSearchQuery;
 
   renderFieldMeta();
@@ -161,7 +154,6 @@ function renderFieldTiles() {
     p.style.gridColumn = "1 / -1";
     p.textContent = "Loading fields from schema.org…";
     elements.fieldList.appendChild(p);
-    elements.fieldPagination.hidden = true;
     return;
   }
 
@@ -172,7 +164,6 @@ function renderFieldTiles() {
     p.style.gridColumn = "1 / -1";
     p.textContent = state.schemaError;
     elements.fieldList.appendChild(p);
-    elements.fieldPagination.hidden = true;
     return;
   }
 
@@ -209,10 +200,6 @@ function renderFieldTiles() {
     ...filtered.filter((f) => !state.selectedFields.has(f.id)),
   ];
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  state.fieldPage = Math.min(state.fieldPage, totalPages - 1);
-  const paged = sorted.slice(state.fieldPage * PAGE_SIZE, (state.fieldPage + 1) * PAGE_SIZE);
-
   elements.fieldList.replaceChildren();
 
   if (!sorted.length) {
@@ -222,7 +209,7 @@ function renderFieldTiles() {
     empty.textContent = query ? "No fields match your search." : "No fields available.";
     elements.fieldList.appendChild(empty);
   } else {
-    for (const field of paged) {
+    for (const field of sorted) {
       const isSelected = state.selectedFields.has(field.id);
       const tile = document.createElement("button");
       tile.type = "button";
@@ -270,14 +257,6 @@ function renderFieldTiles() {
     }
   }
 
-  if (totalPages <= 1) {
-    elements.fieldPagination.hidden = true;
-  } else {
-    elements.fieldPagination.hidden = false;
-    elements.fieldPrevButton.disabled = state.fieldPage === 0;
-    elements.fieldNextButton.disabled = state.fieldPage >= totalPages - 1;
-    elements.fieldPageIndicator.textContent = `Page ${state.fieldPage + 1} of ${totalPages}`;
-  }
 }
 
 
@@ -1028,21 +1007,21 @@ elements.selectAllButton.addEventListener("click", () => {
     state.selectedFields.add(field.id);
     ensureMapping(field);
   }
-  state.fieldPage = 0;
+
   state.fieldSearchQuery = "";
   renderAll();
 });
 
 elements.recommendedButton.addEventListener("click", () => {
   resetRecommendedFields();
-  state.fieldPage = 0;
+
   state.fieldSearchQuery = "";
   renderAll();
 });
 
 elements.clearFieldsButton.addEventListener("click", () => {
   state.selectedFields.clear();
-  state.fieldPage = 0;
+
   state.fieldSearchQuery = "";
   renderAll();
 });
@@ -1059,17 +1038,6 @@ elements.downloadButton.addEventListener("click", downloadOutput);
 
 elements.fieldSearch.addEventListener("input", () => {
   state.fieldSearchQuery = elements.fieldSearch.value;
-  state.fieldPage = 0;
-  renderFieldTiles();
-});
-
-elements.fieldPrevButton.addEventListener("click", () => {
-  state.fieldPage--;
-  renderFieldTiles();
-});
-
-elements.fieldNextButton.addEventListener("click", () => {
-  state.fieldPage++;
   renderFieldTiles();
 });
 

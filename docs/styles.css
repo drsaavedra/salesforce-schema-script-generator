@@ -300,11 +300,9 @@ h2 {
 .field-tiles {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(2, 1fr);
-  /* Every row is the same height (tallest tile = label + path + Recommended badge ≈ 80px).
-     84px gives a little breathing room. 5 rows × 84 + 4 gaps × 8 = 452px min container. */
+  grid-template-columns: repeat(3, 1fr);
+  /* Uniform row height prevents layout reflow when the Recommended badge appears/disappears. */
   grid-auto-rows: 84px;
-  min-height: 452px;
   align-content: start;
 }
 
@@ -363,22 +361,6 @@ h2 {
 
 .field-tile.is-selected .tile-body strong {
   color: var(--accent-strong);
-}
-
-/* ── Field pagination ── */
-.field-pagination {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.field-pagination span {
-  color: var(--muted);
-  font-size: 13px;
-  min-width: 80px;
-  text-align: center;
 }
 
 /* ── Field search ── */
@@ -736,7 +718,7 @@ h2 {
   }
 
   .field-tiles {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .step-header {
