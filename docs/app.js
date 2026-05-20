@@ -1,95 +1,5 @@
-const SCHEMA_REGISTRY = {
-  Product: {
-    label: "Product",
-    status: "Ready",
-    sourceUrl: "https://schema.org/Product",
-    fields: [
-      // ── Recommended (pre-selected) ──
-      { id: "name",               label: "Name",               path: "name",               defaultField: "Name",            defaultSelected: true,  valueType: "text" },
-      { id: "description",        label: "Description",        path: "description",        defaultField: "Description",     defaultSelected: true,  valueType: "text" },
-      { id: "image",              label: "Image",              path: "image",              defaultExpression: "{!Record.ProductMedia.DefaultImage}", defaultSelected: true,  valueType: "expression" },
-      { id: "sku",                label: "SKU",                path: "sku",                defaultField: "StockKeepingUnit",defaultSelected: true,  valueType: "text" },
-      { id: "brand",              label: "Brand",              path: "brand.name",         defaultField: "",                defaultSelected: false, valueType: "brand" },
-      { id: "offers",             label: "Offers",             path: "offers",             defaultField: "",                defaultSelected: true,  valueType: "offer" },
-      { id: "additionalProperty", label: "Additional Property",path: "additionalProperty", defaultField: "",                defaultSelected: false, valueType: "propertyValue" },
-      // ── All other Product + Thing properties (alphabetical) ──
-      { id: "additionalType",             label: "Additional Type",               path: "additionalType",             defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "aggregateRating",            label: "Aggregate Rating",              path: "aggregateRating",            defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "alternateName",              label: "Alternate Name",                path: "alternateName",              defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "audience",                   label: "Audience",                      path: "audience",                   defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "award",                      label: "Award",                         path: "award",                      defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "awards",                     label: "Awards",                        path: "awards",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "category",                   label: "Category",                      path: "category",                   defaultExpression: "{!Record.ProductCategory.Name}", defaultSelected: false, valueType: "expression" },
-      { id: "color",                      label: "Color",                         path: "color",                      defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "countryOfOrigin",            label: "Country Of Origin",             path: "countryOfOrigin",            defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "depth",                      label: "Depth",                         path: "depth",                      defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "disambiguatingDescription",  label: "Disambiguating Description",    path: "disambiguatingDescription",  defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "gtin",                       label: "GTIN",                          path: "gtin",                       defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "gtin8",                      label: "GTIN-8",                        path: "gtin8",                      defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "gtin12",                     label: "GTIN-12",                       path: "gtin12",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "gtin13",                     label: "GTIN-13",                       path: "gtin13",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "gtin14",                     label: "GTIN-14",                       path: "gtin14",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "height",                     label: "Height",                        path: "height",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "identifier",                 label: "Identifier",                    path: "identifier",                 defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "isAccessoryOrSparePartFor",  label: "Is Accessory Or Spare Part For",path: "isAccessoryOrSparePartFor",  defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "isConsumableFor",            label: "Is Consumable For",             path: "isConsumableFor",            defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "isFamilyFriendly",           label: "Is Family Friendly",            path: "isFamilyFriendly",           defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "isRelatedTo",                label: "Is Related To",                 path: "isRelatedTo",                defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "isSimilarTo",                label: "Is Similar To",                 path: "isSimilarTo",                defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "isVariantOf",                label: "Is Variant Of",                 path: "isVariantOf",                defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "itemCondition",              label: "Item Condition",                path: "itemCondition",              defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "keywords",                   label: "Keywords",                      path: "keywords",                   defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "logo",                       label: "Logo",                          path: "logo",                       defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "mainEntityOfPage",           label: "Main Entity Of Page",           path: "mainEntityOfPage",           defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "manufacturer",              label: "Manufacturer",                  path: "manufacturer.name",          defaultField: "", defaultSelected: false, valueType: "organization" },
-      { id: "material",                   label: "Material",                      path: "material",                   defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "model",                      label: "Model",                         path: "model",                      defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "mpn",                        label: "MPN",                           path: "mpn",                        defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "owner",                      label: "Owner",                         path: "owner",                      defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "pattern",                    label: "Pattern",                       path: "pattern",                    defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "potentialAction",            label: "Potential Action",              path: "potentialAction",            defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "predecessorOf",              label: "Predecessor Of",                path: "predecessorOf",              defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "productID",                  label: "Product ID",                    path: "productID",                  defaultField: "ProductCode", defaultSelected: true,  valueType: "text" },
-      { id: "productionDate",             label: "Production Date",               path: "productionDate",             defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "purchaseDate",               label: "Purchase Date",                 path: "purchaseDate",               defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "releaseDate",                label: "Release Date",                  path: "releaseDate",                defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "review",                     label: "Review",                        path: "review",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "reviews",                    label: "Reviews",                       path: "reviews",                    defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "sameAs",                     label: "Same As",                       path: "sameAs",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "size",                       label: "Size",                          path: "size",                       defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "slogan",                     label: "Slogan",                        path: "slogan",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "subjectOf",                  label: "Subject Of",                    path: "subjectOf",                  defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "successorOf",                label: "Successor Of",                  path: "successorOf",                defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "url",                        label: "URL",                           path: "url",                        defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "weight",                     label: "Weight",                        path: "weight",                     defaultField: "", defaultSelected: false, valueType: "text" },
-      { id: "width",                      label: "Width",                         path: "width",                      defaultField: "", defaultSelected: false, valueType: "text" },
-    ],
-  },
-  ProductGroup: {
-    label: "ProductGroup",
-    status: "Coming soon",
-    sourceUrl: "https://schema.org/ProductGroup",
-    fields: [],
-    disabled: true,
-  },
-  ProductCollection: {
-    label: "ProductCollection",
-    status: "Coming soon",
-    sourceUrl: "https://schema.org/ProductCollection",
-    fields: [],
-    disabled: true,
-  },
-};
-
-const DEFAULT_OFFER = {
-  priceExpression: "{!Record.Offers.Price}",
-  currencyExpression: "{!Record.Offers.Currency}",
-  useDefaultPrice: true,
-  useDefaultCurrency: true,
-  sellerType: "Organization",
-  sellerName: "",
-  sellerUrl: "",
-};
+// SCHEMA_REGISTRY, OFFER_TYPES, SELLER_TYPES, BRAND_TYPES, ORGANIZATION_TYPES,
+// TYPE_HINT_DETAILS, and DEFAULT_OFFER are defined in constants.js (loaded before this file).
 
 const RAW_TOKEN_PREFIX = "__SCHEMA_GENERATOR_RAW_";
 
@@ -99,6 +9,7 @@ const state = {
   fieldPage: 0,
   fieldSearchQuery: "",
   schemaLoading: false,
+  schemaError: null,
   selectedFields: new Set(),
   mappings: {},
   customFields: [],
@@ -172,8 +83,14 @@ function defaultMapping(field) {
   }
   if (field.valueType === "propertyValue") {
     return {
-      entries: [{ label: "Features and Benefits", expression: "" }],
+      entries: [{ label: "", expression: "" }],
     };
+  }
+  if (field.valueType === "brand") {
+    return { expression: "", type: "Brand" };
+  }
+  if (field.valueType === "organization") {
+    return { expression: "", type: "Organization" };
   }
   if (field.defaultExpression !== undefined) {
     return { expression: field.defaultExpression };
@@ -243,6 +160,17 @@ function renderFieldTiles() {
     p.className = "status";
     p.style.gridColumn = "1 / -1";
     p.textContent = "Loading fields from schema.org…";
+    elements.fieldList.appendChild(p);
+    elements.fieldPagination.hidden = true;
+    return;
+  }
+
+  if (state.schemaError) {
+    elements.fieldList.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "status warning";
+    p.style.gridColumn = "1 / -1";
+    p.textContent = state.schemaError;
     elements.fieldList.appendChild(p);
     elements.fieldPagination.hidden = true;
     return;
@@ -447,10 +375,48 @@ function tmObjectBlock(parent, key) {
   return inner;
 }
 
+function tmTypeTag(hint) {
+  const span = document.createElement("span");
+  span.className =
+    "field-type-tag" +
+    (hint === "Boolean" ? " is-boolean" : hint === "Number" ? " is-number" : "");
+  span.textContent = hint;
+  const detail = TYPE_HINT_DETAILS[hint];
+  if (detail) span.title = detail;
+  return span;
+}
+
+function tmSelect(id, options, value, onChange) {
+  const sel = document.createElement("select");
+  sel.id = id;
+  sel.className = "tree-select";
+  for (const opt of options) {
+    const o = document.createElement("option");
+    o.value = opt;
+    o.textContent = opt;
+    if (opt === value) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.addEventListener("change", () => { onChange(sel.value); renderOutput(); });
+  return sel;
+}
+
+function applyDefaultToggle(inputId, checked, defaultValue, placeholder) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.value = checked ? defaultValue : "";
+  input.disabled = checked;
+  if (!checked) input.placeholder = placeholder || "";
+  else input.removeAttribute("placeholder");
+  input.classList.toggle("is-disabled", checked);
+}
+
 function appendTreeGenericField(parent, field, mapping) {
   const row = tmRow();
   row.appendChild(tmKey(field.path.split(".")[0]));
   row.appendChild(tmColon());
+
+  let useDefaultEl = null;
 
   if (field.defaultExpression !== undefined) {
     const isDefaulted = mapping.useDefault !== false;
@@ -459,15 +425,15 @@ function appendTreeGenericField(parent, field, mapping) {
       isDefaulted ? field.defaultExpression : (mapping.expression || ""),
       isDefaulted,
       (val) => { mapping.expression = val; },
-      isDefaulted ? "" : field.defaultExpression
+      isDefaulted ? "" : "{!Record.FieldApiName}"
     ));
-    row.appendChild(tmUseDefault(`tree-${field.id}-ud`, isDefaulted, (checked) => {
+    useDefaultEl = tmUseDefault(`tree-${field.id}-ud`, isDefaulted, (checked) => {
       mapping.useDefault = checked;
       if (checked) mapping.expression = field.defaultExpression;
       else mapping.expression = "";
-      renderMappings();
+      applyDefaultToggle(`tree-${field.id}`, checked, field.defaultExpression, "{!Record.FieldApiName}");
       renderOutput();
-    }));
+    });
   } else if (field.valueType === "expression" || field.valueType === "raw") {
     row.appendChild(tmInput(`tree-${field.id}`, mapping.expression || "", false, (val) => { mapping.expression = val; }));
   } else {
@@ -475,12 +441,23 @@ function appendTreeGenericField(parent, field, mapping) {
     row.appendChild(tmInput(`tree-${field.id}`, mapping.expression || "", false, (val) => { mapping.expression = val; }, ph));
   }
 
+  if (field.typeHint) row.appendChild(tmTypeTag(field.typeHint));
+  if (useDefaultEl) row.appendChild(useDefaultEl);
   parent.appendChild(row);
 }
 
 function appendTreeOfferField(parent, field, mapping) {
   const inner = tmObjectBlock(parent, "offers");
-  tmStaticRow(inner, "@type", "Offer");
+  const offerTypeRow = tmRow();
+  offerTypeRow.appendChild(tmKey("@type"));
+  offerTypeRow.appendChild(tmColon());
+  offerTypeRow.appendChild(tmSelect(
+    `tree-${field.id}-offerType`,
+    OFFER_TYPES,
+    mapping.offerType || DEFAULT_OFFER.offerType,
+    (val) => { mapping.offerType = val; }
+  ));
+  inner.appendChild(offerTypeRow);
 
   const isPriceDefault = mapping.useDefaultPrice !== false;
   const priceRow = tmRow();
@@ -491,13 +468,14 @@ function appendTreeOfferField(parent, field, mapping) {
     isPriceDefault ? DEFAULT_OFFER.priceExpression : (mapping.priceExpression || ""),
     isPriceDefault,
     (val) => { mapping.priceExpression = val; },
-    isPriceDefault ? "" : DEFAULT_OFFER.priceExpression
+    isPriceDefault ? "" : "{!Record.FieldApiName}"
   ));
+  priceRow.appendChild(tmTypeTag("Number"));
   priceRow.appendChild(tmUseDefault(`tree-${field.id}-price-ud`, isPriceDefault, (checked) => {
     mapping.useDefaultPrice = checked;
     if (checked) mapping.priceExpression = DEFAULT_OFFER.priceExpression;
     else mapping.priceExpression = "";
-    renderMappings();
+    applyDefaultToggle(`tree-${field.id}-price`, checked, DEFAULT_OFFER.priceExpression, "{!Record.FieldApiName}");
     renderOutput();
   }));
   inner.appendChild(priceRow);
@@ -511,30 +489,40 @@ function appendTreeOfferField(parent, field, mapping) {
     isCurrDefault ? DEFAULT_OFFER.currencyExpression : (mapping.currencyExpression || ""),
     isCurrDefault,
     (val) => { mapping.currencyExpression = val; },
-    isCurrDefault ? "" : DEFAULT_OFFER.currencyExpression
+    isCurrDefault ? "" : "{!Record.FieldApiName}"
   ));
+  currRow.appendChild(tmTypeTag("ISO 4217"));
   currRow.appendChild(tmUseDefault(`tree-${field.id}-curr-ud`, isCurrDefault, (checked) => {
     mapping.useDefaultCurrency = checked;
     if (checked) mapping.currencyExpression = DEFAULT_OFFER.currencyExpression;
     else mapping.currencyExpression = "";
-    renderMappings();
+    applyDefaultToggle(`tree-${field.id}-curr`, checked, DEFAULT_OFFER.currencyExpression, "{!Record.FieldApiName}");
     renderOutput();
   }));
   inner.appendChild(currRow);
 
   const sellerInner = tmObjectBlock(inner, "seller");
-  tmStaticRow(sellerInner, "@type", "Organization");
+  const sellerTypeRow = tmRow();
+  sellerTypeRow.appendChild(tmKey("@type"));
+  sellerTypeRow.appendChild(tmColon());
+  sellerTypeRow.appendChild(tmSelect(
+    `tree-${field.id}-sellerType`,
+    SELLER_TYPES,
+    mapping.sellerType || DEFAULT_OFFER.sellerType,
+    (val) => { mapping.sellerType = val; }
+  ));
+  sellerInner.appendChild(sellerTypeRow);
 
   const sellerNameRow = tmRow();
   sellerNameRow.appendChild(tmKey("name"));
   sellerNameRow.appendChild(tmColon());
-  sellerNameRow.appendChild(tmInput(`tree-${field.id}-sellerName`, mapping.sellerName || "", false, (val) => { mapping.sellerName = val; }));
+  sellerNameRow.appendChild(tmInput(`tree-${field.id}-sellerName`, mapping.sellerName || "", false, (val) => { mapping.sellerName = val; }, "Company Name"));
   sellerInner.appendChild(sellerNameRow);
 
   const sellerUrlRow = tmRow();
   sellerUrlRow.appendChild(tmKey("url"));
   sellerUrlRow.appendChild(tmColon());
-  sellerUrlRow.appendChild(tmInput(`tree-${field.id}-sellerUrl`, mapping.sellerUrl || "", false, (val) => { mapping.sellerUrl = val; }));
+  sellerUrlRow.appendChild(tmInput(`tree-${field.id}-sellerUrl`, mapping.sellerUrl || "", false, (val) => { mapping.sellerUrl = val; }, "Company Website"));
   sellerInner.appendChild(sellerUrlRow);
 }
 
@@ -599,9 +587,22 @@ function appendTreePropertyValueField(parent, field, mapping) {
   parent.appendChild(closeRow);
 }
 
-function appendTreeObjectField(parent, field, mapping, atType) {
+function appendTreeObjectField(parent, field, mapping, defaultType, typeOptions) {
   const inner = tmObjectBlock(parent, field.path.split(".")[0]);
-  tmStaticRow(inner, "@type", atType);
+  if (typeOptions && typeOptions.length > 1) {
+    const typeRow = tmRow();
+    typeRow.appendChild(tmKey("@type"));
+    typeRow.appendChild(tmColon());
+    typeRow.appendChild(tmSelect(
+      `tree-${field.id}-type`,
+      typeOptions,
+      mapping.type || defaultType,
+      (val) => { mapping.type = val; }
+    ));
+    inner.appendChild(typeRow);
+  } else {
+    tmStaticRow(inner, "@type", defaultType);
+  }
   const nameRow = tmRow();
   nameRow.appendChild(tmKey("name"));
   nameRow.appendChild(tmColon());
@@ -645,9 +646,9 @@ function renderMappings() {
     } else if (field.valueType === "propertyValue") {
       appendTreePropertyValueField(children, field, mapping);
     } else if (field.valueType === "brand") {
-      appendTreeObjectField(children, field, mapping, "Brand");
+      appendTreeObjectField(children, field, mapping, "Brand", BRAND_TYPES);
     } else if (field.valueType === "organization") {
-      appendTreeObjectField(children, field, mapping, "Organization");
+      appendTreeObjectField(children, field, mapping, "Organization", ORGANIZATION_TYPES);
     } else {
       appendTreeGenericField(children, field, mapping);
     }
@@ -669,13 +670,13 @@ function applySelectedField(graph, field) {
 
   if (field.valueType === "offer") {
     const offer = {
-      "@type": "Offer",
+      "@type": mapping.offerType || DEFAULT_OFFER.offerType,
       price: mapping.priceExpression || "",
       priceCurrency: mapping.currencyExpression || "",
     };
     if (mapping.sellerName || mapping.sellerUrl) {
       offer.seller = {
-        "@type": mapping.sellerType || "Organization",
+        "@type": mapping.sellerType || DEFAULT_OFFER.sellerType,
       };
       if (mapping.sellerName) {
         offer.seller.name = mapping.sellerName;
@@ -690,7 +691,7 @@ function applySelectedField(graph, field) {
 
   if (field.valueType === "brand") {
     graph.brand = {
-      "@type": "Brand",
+      "@type": mapping.type || "Brand",
       name: value,
     };
     return;
@@ -698,7 +699,7 @@ function applySelectedField(graph, field) {
 
   if (field.valueType === "organization") {
     graph[field.path.split(".")[0]] = {
-      "@type": "Organization",
+      "@type": mapping.type || "Organization",
       name: value,
     };
     return;
@@ -824,13 +825,25 @@ function renderOutput() {
 
 async function loadSchemaData() {
   state.schemaLoading = true;
+  state.schemaError = null;
   renderFieldTiles();
   try {
-    const fields = await loadSchemaFields();
-    if (fields.length) {
-      SCHEMA_REGISTRY.Product.fields = fields;
+    // schema.ttl is fetched once (cached in schema-parser.js); all type parses share it.
+    const results = await Promise.all(
+      Object.keys(SCHEMA_REGISTRY).map((typeName) =>
+        loadSchemaFields(typeName).then(({ fields, error }) => ({ typeName, fields, error }))
+      )
+    );
+    for (const { typeName, fields, error } of results) {
+      if (fields.length) {
+        SCHEMA_REGISTRY[typeName].fields = fields;
+      } else if (typeName === state.schemaType && error) {
+        state.schemaError = error;
+      }
     }
-  } catch (_) {}
+  } catch (err) {
+    state.schemaError = String(err);
+  }
   state.schemaLoading = false;
 }
 

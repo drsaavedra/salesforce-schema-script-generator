@@ -227,6 +227,24 @@ h2 {
   width: 40px;
 }
 
+/* ── Persistent schema toolbar (between step nav and step panels) ── */
+.schema-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.btn-preview-schema {
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-preview-schema:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
 /* ── Wizard steps ── */
 .wizard-step {
   background: var(--panel);
@@ -283,6 +301,11 @@ h2 {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(2, 1fr);
+  /* Every row is the same height (tallest tile = label + path + Recommended badge ≈ 80px).
+     84px gives a little breathing room. 5 rows × 84 + 4 gaps × 8 = 452px min container. */
+  grid-auto-rows: 84px;
+  min-height: 452px;
+  align-content: start;
 }
 
 .field-tile {
@@ -293,7 +316,6 @@ h2 {
   display: grid;
   gap: 10px;
   grid-template-columns: 18px 1fr;
-  min-height: 56px;
   padding: 11px;
   text-align: left;
   width: 100%;
@@ -456,13 +478,14 @@ h2 {
   border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent);
   border-radius: 3px 3px 0 0;
   color: var(--ink);
-  display: inline-block;
+  flex: 1;
   font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
   font-size: 13px;
   min-height: auto;
+  min-width: 120px;
   padding: 0 6px;
   vertical-align: baseline;
-  width: 320px;
+  width: auto;
 }
 
 .tree-input:focus {
@@ -475,6 +498,28 @@ h2 {
 .tree-input::placeholder {
   color: color-mix(in srgb, var(--muted) 60%, transparent);
   font-style: italic;
+}
+
+.tree-select {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1px solid transparent;
+  border-bottom: 1.5px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 3px 3px 0 0;
+  color: var(--ink);
+  display: inline-block;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 13px;
+  min-height: auto;
+  padding: 0 4px;
+  vertical-align: baseline;
+  width: auto;
+}
+
+.tree-select:focus {
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
+  outline: none;
 }
 
 .tree-input.is-disabled,
@@ -510,6 +555,31 @@ h2 {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.field-type-tag {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border-radius: 3px;
+  color: var(--muted);
+  cursor: help;
+  font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-left: 4px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+  vertical-align: baseline;
+}
+
+.field-type-tag.is-boolean {
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  color: var(--warn);
+}
+
+.field-type-tag.is-number {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-strong);
 }
 
 .tree-array-btn {

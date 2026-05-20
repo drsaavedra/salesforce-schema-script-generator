@@ -1,25 +1,60 @@
 // Parses docs/data/schema.ttl (local copy of schema.org Turtle file) and returns
-// schema.org/Product + Thing properties as field descriptor objects for use by app.js.
+// field descriptor objects for a given schema type.
+//
+// How it works:
+//   1. Scan the TTL once into named blocks.
+//   2. Build a class map (name → parent names) from rdfs:Class blocks.
+//   3. BFS-walk the class map to collect a type's full ancestor set.
+//   4. Extract every rdf:Property whose :domainIncludes overlaps that ancestor set.
+//   5. Merge with FIELD_OVERRIDES for Salesforce-specific metadata.
 //
 // Public API:
-//   loadSchemaFields() -> Promise<Array<FieldDescriptor>>
+//   loadSchemaFields(typeName) -> Promise<Array<FieldDescriptor>>
+//   (TTL is fetched once and cached across calls)
 
-// Salesforce-specific overrides: map property name -> field descriptor overrides.
-// Properties not listed here get generic defaults (valueType: "text", no defaultField).
+// ── Salesforce metadata overrides ─────────────────────────────────────────────
+// Keys are schema.org property names. Anything not listed gets generic defaults.
 const FIELD_OVERRIDES = {
-  name:               { label: "Name", defaultField: "Name", defaultSelected: true, valueType: "text" },
-  description:        { defaultField: "Description", defaultSelected: true, valueType: "text" },
-  image:              { defaultField: "URL_Picture__c", defaultSelected: true, valueType: "imageArray" },
-  sku:                { label: "SKU", defaultField: "StockKeepingUnit", defaultSelected: true, valueType: "text" },
-  brand:              { path: "brand.name", defaultSelected: true, valueType: "brand" },
-  offers:             { defaultSelected: true, valueType: "offer" },
-  additionalProperty: { defaultSelected: true, valueType: "propertyValue" },
-  category:           { defaultExpression: "{!Record.ProductCategory.Name}", valueType: "expression" },
-  manufacturer:       { path: "manufacturer.name", valueType: "organization" },
+  // Core product identity
+  name:               { label: "Name",                defaultField: "Name",             defaultSelected: true,  valueType: "text" },
+  description:        {                               defaultField: "Description",       defaultSelected: true,  valueType: "text" },
+  image:              { defaultExpression: "{!Record.ProductMedia.DefaultImage}",         defaultSelected: true,  valueType: "expression" },
+  sku:                { label: "SKU",                 defaultField: "StockKeepingUnit",  defaultSelected: true,  valueType: "text" },
+  productID:          { label: "Product ID",          defaultField: "ProductCode",       defaultSelected: true,  valueType: "text" },
+  brand:              { path: "brand.name",                                              defaultSelected: false, valueType: "brand" },
+  offers:             {                                                                  defaultSelected: true,  valueType: "offer" },
+  additionalProperty: {                                                                  defaultSelected: false, valueType: "propertyValue" },
+  category:           { defaultExpression: "{!Record.ProductCategory.Name}",                                    valueType: "expression" },
+  manufacturer:       { path: "manufacturer.name",                                                              valueType: "organization" },
+
+  // Non-obvious type hints (validator will reject wrong types)
+  isFamilyFriendly:   { typeHint: "Boolean" },
+  url:                { typeHint: "URL" },
+  sameAs:             { typeHint: "URL" },
+  logo:               { typeHint: "URL" },
+  mainEntityOfPage:   { typeHint: "URL" },
+  productionDate:     { typeHint: "Date" },
+  purchaseDate:       { typeHint: "Date" },
+  releaseDate:        { typeHint: "Date" },
+
+  // ProductGroup-specific
+  productGroupID:     { label: "Product Group ID",   defaultSelected: true,  valueType: "text" },
+  variesBy:           { label: "Varies By",          defaultSelected: true,  valueType: "text" },
+  hasVariant:         { label: "Has Variant",                                valueType: "text" },
+
+  // ProductCollection-specific
+  collectionSize:     { label: "Collection Size",    typeHint: "Number",     valueType: "text" },
+  includesObject:     { label: "Includes Object",                            valueType: "text" },
 };
 
-// These fields appear first in the tile grid in the order listed.
-const RECOMMENDED_ORDER = ["name", "description", "image", "sku", "brand", "offers", "additionalProperty"];
+// Fields shown first in Step 1 tile grid, in order, per schema type.
+const RECOMMENDED_ORDER = {
+  Product:           ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
+  ProductGroup:      ["name", "description", "image", "productGroupID", "variesBy", "brand", "offers"],
+  ProductCollection: ["name", "description", "image", "brand", "offers", "collectionSize"],
+};
+
+// ── TTL parsing ───────────────────────────────────────────────────────────────
 
 function toHumanLabel(propName) {
   return propName
@@ -28,92 +63,153 @@ function toHumanLabel(propName) {
     .trim();
 }
 
-// Extracts all rdf:Property entries whose domainIncludes contains :Product or :Thing.
-// The schema.ttl file uses bare ":" prefix (mapped to https://schema.org/).
-function parseTTLForProduct(ttl) {
-  const TARGET_DOMAINS = [":Product", ":Thing"];
-  const results = [];
-  let currentPropName = null;
-  let currentLines = [];
+// Single pass over the TTL: splits into named subject blocks [{name, text}].
+// Each block starts with ":Name a <type>" and ends when the next subject starts.
+function parseTTLBlocks(ttl) {
+  const blocks = [];
+  let name = null;
+  let lines = [];
 
-  const processBlock = () => {
-    if (!currentPropName || !currentLines.length) return;
-    const blockText = currentLines.join("\n");
-    if (!blockText.includes("a rdf:Property")) return;
-    const diStart = blockText.indexOf(":domainIncludes");
-    if (diStart === -1) return;
-    const diEnd = blockText.indexOf(";", diStart);
-    const domainStr = diEnd > -1 ? blockText.slice(diStart, diEnd) : blockText.slice(diStart);
-    if (!TARGET_DOMAINS.some((d) => domainStr.includes(d))) return;
-    // Handle both triple-quoted (multi-line) and single-quoted comments
-    const tripleMatch = blockText.match(/rdfs:comment\s+"""([\s\S]*?)"""/);
-    const singleMatch = blockText.match(/rdfs:comment\s+"((?:[^"\\]|\\.)*)"/);
-    const raw = tripleMatch ? tripleMatch[1] : singleMatch ? singleMatch[1] : "";
-    const comment = raw.replace(/\s+/g, " ").trim();
-    results.push({ propName: currentPropName, comment });
+  const flush = () => {
+    if (name && lines.length) blocks.push({ name, text: lines.join("\n") });
   };
 
   for (const line of ttl.split("\n")) {
     if (line.startsWith("#")) continue;
-    const subjectMatch = line.match(/^:(\w+)\s+a\s+/);
-    if (subjectMatch) {
-      processBlock();
-      currentPropName = subjectMatch[1];
-      currentLines = [line];
-    } else if (currentPropName) {
-      currentLines.push(line);
+    const m = line.match(/^:(\w+)\s+a\s+/);
+    if (m) {
+      flush();
+      name = m[1];
+      lines = [line];
+    } else if (name) {
+      lines.push(line);
     }
   }
-  processBlock();
+  flush();
+  return blocks;
+}
+
+// Build class map: className → [parentClassName, ...] from rdfs:Class blocks.
+// Handles multiple inheritance (e.g. ProductCollection extends Product AND Collection).
+function buildClassMap(blocks) {
+  const map = {};
+  for (const { name, text } of blocks) {
+    if (!text.includes("a rdfs:Class")) continue;
+    const parents = [];
+    const re = /:subClassOf\s+([^;.]+)/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      for (const ref of m[1].match(/:(\w+)/g) || []) {
+        parents.push(ref.slice(1)); // strip leading ":"
+      }
+    }
+    map[name] = parents;
+  }
+  return map;
+}
+
+// BFS from typeName through the class map → Set of typeName + all ancestors.
+function getAncestors(classMap, typeName) {
+  const visited = new Set([typeName]);
+  const queue = [typeName];
+  while (queue.length) {
+    for (const parent of classMap[queue.shift()] || []) {
+      if (!visited.has(parent)) {
+        visited.add(parent);
+        queue.push(parent);
+      }
+    }
+  }
+  return visited;
+}
+
+// Extract rdf:Property blocks whose :domainIncludes overlaps targetTypes.
+// Returns [{propName, comment}].
+function extractProperties(blocks, targetTypes) {
+  const results = [];
+  for (const { name, text } of blocks) {
+    if (!text.includes("a rdf:Property")) continue;
+    const diStart = text.indexOf(":domainIncludes");
+    if (diStart === -1) continue;
+    // domainIncludes ends at the next ";" (next predicate) or end of block
+    const diEnd = text.indexOf(";", diStart);
+    const domainStr = diEnd > -1 ? text.slice(diStart, diEnd) : text.slice(diStart);
+    if (![...targetTypes].some((t) => domainStr.includes(`:${t}`))) continue;
+    const tripleMatch = text.match(/rdfs:comment\s+"""([\s\S]*?)"""/);
+    const singleMatch = text.match(/rdfs:comment\s+"((?:[^"\\]|\\.)*)"/);
+    const raw = tripleMatch ? tripleMatch[1] : singleMatch ? singleMatch[1] : "";
+    results.push({ propName: name, comment: raw.replace(/\s+/g, " ").trim() });
+  }
   return results;
 }
 
-// Merges TTL property list with FIELD_OVERRIDES and returns sorted field descriptors.
-// Recommended fields come first; remaining fields are alphabetical.
-function buildFieldsFromTTL(ttlProps) {
+// Merge extracted properties with FIELD_OVERRIDES and sort.
+// Recommended fields come first (in declared order); the rest are alphabetical.
+function buildFields(props, typeName) {
+  const recommended = RECOMMENDED_ORDER[typeName] || RECOMMENDED_ORDER.Product;
   const fieldMap = {};
-  for (const { propName, comment } of ttlProps) {
+
+  for (const { propName, comment } of props) {
     const ov = FIELD_OVERRIDES[propName] || {};
     const field = {
-      id: propName,
-      label: ov.label || toHumanLabel(propName),
-      path: ov.path || propName,
-      defaultField: ov.defaultField ?? "",
+      id:              propName,
+      label:           ov.label           ?? toHumanLabel(propName),
+      path:            ov.path            ?? propName,
+      defaultField:    ov.defaultField    ?? "",
       defaultSelected: ov.defaultSelected ?? false,
-      valueType: ov.valueType ?? "text",
-      description: comment,
+      valueType:       ov.valueType       ?? "text",
+      description:     comment,
     };
-    if (ov.defaultExpression !== undefined) {
-      field.defaultExpression = ov.defaultExpression;
-    }
+    if (ov.defaultExpression !== undefined) field.defaultExpression = ov.defaultExpression;
+    if (ov.typeHint)                        field.typeHint = ov.typeHint;
     fieldMap[propName] = field;
   }
-  const recommended = RECOMMENDED_ORDER.filter((id) => fieldMap[id]).map((id) => fieldMap[id]);
+
+  const recFields = recommended.filter((id) => fieldMap[id]).map((id) => fieldMap[id]);
   const rest = Object.values(fieldMap)
-    .filter((f) => !RECOMMENDED_ORDER.includes(f.id))
+    .filter((f) => !recommended.includes(f.id))
     .sort((a, b) => a.label.localeCompare(b.label));
-  return [...recommended, ...rest];
+  return [...recFields, ...rest];
 }
 
-// Main entry point called by app.js.
-// Returns a Promise that resolves to an array of field descriptors.
-// Falls back to product-schema.txt if schema.ttl cannot be parsed.
-async function loadSchemaFields() {
-  try {
-    const res = await fetch("data/schema.ttl");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const ttl = await res.text();
-    const fields = buildFieldsFromTTL(parseTTLForProduct(ttl));
-    if (fields.length) return fields;
-  } catch (_) {}
+// ── Cache ─────────────────────────────────────────────────────────────────────
+// TTL is fetched once and shared across all type calls.
+// _parseError is set if the fetch or parse fails so callers can surface it.
 
-  try {
-    const res = await fetch("data/product-schema.txt");
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.fields) && data.fields.length) return data.fields;
-    }
-  } catch (_) {}
+let _blocks = null;
+let _classMap = null;
+let _parseError = null;
+let _fetchPromise = null;
 
-  return [];
+function _ensureParsed() {
+  if (_fetchPromise) return _fetchPromise;
+  _fetchPromise = fetch("data/schema.ttl")
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    })
+    .then((ttl) => {
+      _blocks = parseTTLBlocks(ttl);
+      _classMap = buildClassMap(_blocks);
+    })
+    .catch((err) => {
+      _parseError = err;
+      _blocks = [];
+      _classMap = {};
+    });
+  return _fetchPromise;
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+// Returns { fields, error } — error is null on success, a string message on failure.
+async function loadSchemaFields(typeName = "Product") {
+  await _ensureParsed();
+  if (_parseError) {
+    return { fields: [], error: `Could not load schema.ttl: ${_parseError.message}. If testing locally, serve the docs/ folder over HTTP (e.g. VS Code Live Server or: npx serve docs).` };
+  }
+  const ancestors = getAncestors(_classMap, typeName);
+  const props = extractProperties(_blocks, ancestors);
+  const fields = buildFields(props, typeName);
+  return { fields, error: fields.length ? null : `No fields found for type "${typeName}" in schema.ttl.` };
 }

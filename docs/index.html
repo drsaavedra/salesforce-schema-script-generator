@@ -37,12 +37,14 @@
         </div>
       </nav>
 
+      <div class="schema-toolbar">
+        <button type="button" id="previewSchemaButton" class="btn-preview-schema">Preview Schema</button>
+      </div>
+
       <section class="wizard-step" id="wizardStep1" aria-labelledby="step1Heading">
         <div class="step-header">
           <h2 id="step1Heading">Select Schema Fields</h2>
           <div class="step-header-actions">
-            <button type="button" id="previewSchemaButton">Preview Schema</button>
-            <span class="btn-group-divider" aria-hidden="true"></span>
             <button type="button" id="selectAllButton">Select All</button>
             <button type="button" id="recommendedButton">Recommended</button>
             <button type="button" id="clearFieldsButton">Clear</button>
@@ -115,6 +117,7 @@
     </template>
 
     <script src="schema-parser.js"></script>
+    <script src="constants.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
