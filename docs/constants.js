@@ -19,13 +19,6 @@ const SCHEMA_REGISTRY = {
     fields: [],
     disabled: true,
   },
-  ProductCollection: {
-    label: "ProductCollection",
-    status: "Coming soon",
-    sourceUrl: "https://schema.org/ProductCollection",
-    fields: [],
-    disabled: true,
-  },
 };
 
 // ── @type picklist options ────────────────────────────────────────────────────

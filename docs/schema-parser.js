@@ -18,7 +18,7 @@ const FIELD_OVERRIDES = {
   // Core product identity
   name:               { label: "Name",                defaultField: "Name",             defaultSelected: true,  valueType: "text" },
   description:        {                               defaultField: "Description",       defaultSelected: true,  valueType: "text" },
-  image:              { defaultExpression: "{!Record.ProductMedia.DefaultImage}",         defaultSelected: true,  valueType: "expression" },
+  image:              { defaultExpression: "{!Record.ProductMedia.ProductDetailImages}",   defaultSelected: true,  valueType: "raw" },
   sku:                { label: "SKU",                 defaultField: "StockKeepingUnit",  defaultSelected: true,  valueType: "text" },
   productID:          { label: "Product ID",          defaultField: "ProductCode",       defaultSelected: true,  valueType: "text" },
   brand:              { path: "brand.name",                                              defaultSelected: false, valueType: "brand" },
@@ -28,7 +28,7 @@ const FIELD_OVERRIDES = {
   manufacturer:       { path: "manufacturer.name",                                                              valueType: "organization" },
 
   // Non-obvious type hints (validator will reject wrong types)
-  isFamilyFriendly:   { typeHint: "Boolean" },
+  isFamilyFriendly:   { typeHint: "Boolean", valueType: "raw" },
   url:                { typeHint: "URL" },
   sameAs:             { typeHint: "URL" },
   logo:               { typeHint: "URL" },
@@ -41,16 +41,12 @@ const FIELD_OVERRIDES = {
   productGroupID:     { label: "Product Group ID",   defaultSelected: true,  valueType: "text" },
   variesBy:           { label: "Varies By",          defaultSelected: true,  valueType: "text" },
 
-  // ProductCollection-specific
-  collectionSize:     { label: "Collection Size",    typeHint: "Number",     valueType: "text" },
-  includesObject:     { label: "Includes Object",                            valueType: "text" },
 };
 
 // Fields shown first in Step 1 tile grid, in order, per schema type.
 const RECOMMENDED_ORDER = {
-  Product:           ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
-  ProductGroup:      ["name", "description", "image", "productGroupID", "variesBy", "brand", "offers"],
-  ProductCollection: ["name", "description", "image", "brand", "offers", "collectionSize"],
+  Product:      ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
+  ProductGroup: ["name", "description", "image", "productGroupID", "variesBy", "brand", "offers"],
 };
 
 // Fields excluded because they cannot be expressed as a Salesforce merge field

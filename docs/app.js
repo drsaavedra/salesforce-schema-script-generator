@@ -12,6 +12,7 @@ const state = {
   selectedFields: new Set(),
   mappings: {},
   customFields: [],
+  includeBreadcrumbList: false,
 };
 
 const elements = {
@@ -30,6 +31,7 @@ const elements = {
   fieldCounter: document.querySelector("#fieldCounter"),
   clearFieldsButton: document.querySelector("#clearFieldsButton"),
   resetMappingsButton: document.querySelector("#resetMappingsButton"),
+  breadcrumbToggle: document.querySelector("#breadcrumbToggle"),
   copyButton: document.querySelector("#copyButton"),
   downloadButton: document.querySelector("#downloadButton"),
   sourceLink: document.querySelector(".source-link"),
@@ -101,12 +103,9 @@ function ensureMapping(field) {
 }
 
 function resetRecommendedFields() {
-  state.selectedFields = new Set(
-    currentSchema()
-      .fields.filter((field) => field.defaultSelected)
-      .map((field) => field.id)
-  );
-  for (const field of currentSchema().fields) {
+  const recommended = currentSchema().fields.filter((field) => field.defaultSelected);
+  state.selectedFields = new Set(recommended.map((field) => field.id));
+  for (const field of recommended) {
     state.mappings[field.id] = defaultMapping(field);
   }
 }
@@ -124,8 +123,10 @@ function renderSchemaTypes() {
     node.disabled = Boolean(schema.disabled);
     node.setAttribute("aria-pressed", schemaType === state.schemaType ? "true" : "false");
     node.addEventListener("click", () => {
+      if (node.disabled) return;
       state.schemaType = schemaType;
       state.fieldSearchQuery = "";
+      state.mappings = {};
       resetRecommendedFields();
       goToStep(1);
       renderAll();
@@ -136,10 +137,10 @@ function renderSchemaTypes() {
 
 function renderFieldMeta() {
   const totalFields = allFields().length;
-  elements.fieldCounter.textContent = `${state.selectedFields.size} / ${totalFields} fields selected`;
-  elements.nextButton.textContent = state.selectedFields.size > 0
-    ? `Next → (${state.selectedFields.size} selected)`
-    : "Next →";
+  const count = state.selectedFields.size;
+  elements.fieldCounter.textContent = `${count} / ${totalFields} fields selected`;
+  elements.nextButton.textContent = count > 0 ? `Next → (${count} selected)` : "Next →";
+  elements.nextButton.disabled = count === 0;
 }
 
 function renderFieldTiles() {
@@ -557,7 +558,7 @@ function appendTreePropertyValueField(parent, field, mapping) {
   addBtn.type = "button";
   addBtn.className = "btn-add-entry tree-array-btn";
   addBtn.textContent = "+ Add property";
-  addBtn.addEventListener("click", () => { mapping.entries.push({ label: "", expression: "" }); renderMappings(); });
+  addBtn.addEventListener("click", () => { mapping.entries.push({ label: "", expression: "" }); renderMappings(); renderOutput(); });
   addRow.appendChild(addBtn);
   arrayInner.appendChild(addRow);
 
@@ -603,7 +604,7 @@ function renderMappings() {
 
   const banner = document.createElement("p");
   banner.className = "mapping-banner";
-  banner.innerHTML = "Enter a Salesforce merge field like <code>{!Record.Name}</code>, or a static value for any field.";
+  banner.innerHTML = "Bind each property to a Salesforce merge expression — e.g. {!Record.FieldApiName} — or a static value.";
   elements.mappingForm.appendChild(banner);
 
   const wrap = document.createElement("div");
@@ -650,7 +651,7 @@ function applySelectedField(graph, field) {
   if (field.valueType === "offer") {
     const offer = {
       "@type": mapping.offerType || DEFAULT_OFFER.offerType,
-      price: mapping.priceExpression || "",
+      price: rawExpression(mapping.priceExpression || ""),
       priceCurrency: mapping.currencyExpression || "",
     };
     if (mapping.sellerName || mapping.sellerUrl) {
@@ -706,7 +707,8 @@ function applySelectedField(graph, field) {
   }
 
   if (field.valueType === "number") {
-    graph[field.path] = Number(value) || value;
+    const num = Number(value);
+    graph[field.path] = Number.isNaN(num) ? value : num;
     return;
   }
 
@@ -729,7 +731,7 @@ function graphToJsonWithExpressions(graph) {
   );
 
   return rawValues.reduce(
-    (output, value, index) => output.replace(`"${RAW_TOKEN_PREFIX}${index}__"`, value),
+    (output, value, index) => output.replace(`"${RAW_TOKEN_PREFIX}${index}__"`, () => value),
     json
   );
 }
@@ -747,7 +749,11 @@ function buildScript() {
     }
   }
 
-  return `<script type="application/ld+json">\n${graphToJsonWithExpressions(graph)}\n</script>`;
+  let output = `<script type="application/ld+json">\n${graphToJsonWithExpressions(graph)}\n</script>`;
+  if (state.includeBreadcrumbList) {
+    output += `\n<script type="application/ld+json">\n{!Record.BreadcrumbList}\n</script>`;
+  }
+  return output;
 }
 
 function buildWarnings() {
@@ -862,9 +868,13 @@ async function copyOutput() {
   try {
     await navigator.clipboard.writeText(elements.scriptOutput.value);
     elements.copyStatus.textContent = "Copied.";
-  } catch (error) {
-    document.execCommand("copy");
-    elements.copyStatus.textContent = "Copied.";
+  } catch {
+    try {
+      document.execCommand("copy");
+      elements.copyStatus.textContent = "Copied.";
+    } catch {
+      elements.copyStatus.textContent = "Copy failed — select the text and copy manually.";
+    }
   }
   clearStatusSoon();
 }
@@ -991,11 +1001,34 @@ function renderJsonTree(value) {
 function openSchemaPreview() {
   const graph = buildPreviewGraph();
   elements.schemaPreviewTree.replaceChildren(renderJsonTree(graph));
+
+  if (state.includeBreadcrumbList) {
+    const divider = document.createElement("div");
+    divider.className = "schema-preview-block-divider";
+    divider.textContent = "BreadcrumbList";
+
+    const exprNode = document.createElement("div");
+    exprNode.className = "tree-node";
+    const exprSpan = document.createElement("span");
+    exprSpan.className = "tree-val-string";
+    exprSpan.textContent = "{!Record.BreadcrumbList}";
+    exprNode.appendChild(exprSpan);
+
+    elements.schemaPreviewTree.appendChild(divider);
+    elements.schemaPreviewTree.appendChild(exprNode);
+  }
+
   elements.schemaPreviewOverlay.hidden = false;
+  document.querySelector(".app-header").inert = true;
+  document.querySelector(".schema-bar").inert = true;
+  document.querySelector(".wizard-container").inert = true;
   elements.closePreviewButton.focus();
 }
 
 function closeSchemaPreview() {
+  document.querySelector(".app-header").inert = false;
+  document.querySelector(".schema-bar").inert = false;
+  document.querySelector(".wizard-container").inert = false;
   elements.schemaPreviewOverlay.hidden = true;
   elements.previewSchemaButton.focus();
 }
@@ -1033,6 +1066,10 @@ elements.resetMappingsButton.addEventListener("click", () => {
   renderAll();
 });
 
+elements.breadcrumbToggle.addEventListener("change", () => {
+  state.includeBreadcrumbList = elements.breadcrumbToggle.checked;
+  renderOutput();
+});
 elements.copyButton.addEventListener("click", copyOutput);
 elements.downloadButton.addEventListener("click", downloadOutput);
 

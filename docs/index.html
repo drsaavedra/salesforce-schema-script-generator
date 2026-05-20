@@ -50,7 +50,7 @@
             <button type="button" id="clearFieldsButton">Clear</button>
           </div>
         </div>
-        <input id="fieldSearch" class="field-search-input" type="text" placeholder="Search fields..." autocomplete="off" />
+        <input id="fieldSearch" class="field-search-input" type="text" placeholder="Search fields..." autocomplete="off" aria-label="Search schema fields" />
         <div class="field-meta-row">
           <span id="fieldCounter" class="field-counter"></span>
           <button type="button" id="selectAllMatchingBtn" class="btn-select-matching" hidden></button>
@@ -79,11 +79,18 @@
         <div class="step-header">
           <h2 id="step3Heading">Head Markup Script</h2>
           <div class="step-header-actions">
-            <button type="button" id="copyButton">Copy</button>
-            <button type="button" id="downloadButton">Download</button>
+            <button type="button" id="copyButton" aria-label="Copy script to clipboard">Copy</button>
+            <button type="button" id="downloadButton" aria-label="Download script as file">Download</button>
           </div>
         </div>
-        <div id="outputWarnings" class="output-warnings" aria-live="polite"></div>
+        <div id="outputWarnings" class="output-warnings" aria-live="polite" aria-relevant="additions removals"></div>
+        <div class="output-options">
+          <label class="output-option-label">
+            <input type="checkbox" id="breadcrumbToggle" />
+            <span>Include BreadcrumbList</span>
+            <span class="output-option-hint">Appends a second script block using Salesforce's native <code>{!Record.BreadcrumbList}</code> expression</span>
+          </label>
+        </div>
         <textarea id="scriptOutput" spellcheck="false" aria-label="Generated script"></textarea>
         <div class="step-footer">
           <button type="button" id="backButton2">&larr; Edit</button>

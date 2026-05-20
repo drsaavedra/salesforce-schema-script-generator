@@ -1,0 +1,9 @@
+# Local tool and AI assistant directories
+.claude/
+
+# Internal development notes (not for public repo)
+handover.md
+learning.md
+
+# Local test artifacts
+test-files/
