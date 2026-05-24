@@ -50,9 +50,9 @@ Trace for `additionalProperty` field with multiple entries.
 If any number field exists, trace the Number coercion.  
 **Expected:** `Number.isNaN(num) ? value : num` — numeric output for valid numbers, string fallback for invalid. Zero (`0`) must emit `0`, not fall back to string.
 
-### TC1-09 — offers.price raw token
-Verify `offers.price` uses `rawExpression(mapping.priceExpression)`.  
-**Expected:** Price is emitted **unquoted** (e.g. `{!Record.Offers.Price}` not `"{!Record.Offers.Price}"`).
+### TC1-09 — offers.price quoted expression
+Verify `offers.price` is assigned directly as a string: `offer.price = mapping.priceExpression`.  
+**Expected:** Price is emitted **quoted** (e.g. `"price": "{!Record.Offers.Price}"`). Salesforce evaluates the merge expression at render time; the static markup must have it as a string so the Head Markup parser recognises it. Price is only added to the offer object when `mapping.priceExpression` is non-empty.
 
 ### TC1-10 — Raw token $ corruption
 Verify `graphToJsonWithExpressions()` uses `() => value` as the replacement function.  
@@ -77,3 +77,19 @@ Deselect a field in Step 1, go to Step 2, confirm that field's row is gone from 
 ### TC1-15 — BreadcrumbList in output
 When `state.includeBreadcrumbList` is true, `buildScript()` wraps both the Product and BreadcrumbList objects in a JSON array inside a single `<script>` block.  
 **Expected:** Output contains exactly one `<script type="application/ld+json">` block whose content is a JSON array with two elements: the Product object and a BreadcrumbList object with `itemListElement: "{!Record.BreadcrumbList}"`.
+
+### TC1-16 — valueType "commaSeparatedArray": multiple values
+Trace `applySelectedField()` for a field with `valueType === "commaSeparatedArray"` (e.g. `variesBy`). Input: `"color, size, material"`.  
+**Expected:** `value.split(",").map(s => s.trim()).filter(Boolean)` → `["color", "size", "material"]`. Since `parts.length > 1`, `graph[field.path] = ["color", "size", "material"]` — a JSON array.
+
+### TC1-17 — valueType "commaSeparatedArray": single value
+Same as TC1-16 but input is `"color"` (no comma).  
+**Expected:** `parts.length === 1` → `graph[field.path] = "color"` — a plain string, not a single-element array.
+
+### TC1-18 — applyCustomVariations(): merges into existing additionalProperty
+`state.customVariations = [{ name: "Angle", expression: "{!Record.ProductAttributes.Angle__c}" }]`. `additionalProperty` field is also selected with one entry already in `mapping.entries` (label: "Material", expression: `{!Record.ProductAttributes.Material__c}`). Trace `buildScript()`.  
+**Expected:** `graph.additionalProperty` is already an array after `applySelectedField()`. `applyCustomVariations()` checks `Array.isArray(graph.additionalProperty)` → true → spreads: `[...existing, ...variationEntries]`. Final array has two `PropertyValue` items.
+
+### TC1-19 — applyCustomVariations(): creates additionalProperty when not selected
+`state.customVariations = [{ name: "Angle", expression: "{!Record.ProductAttributes.Angle__c}" }]`. The `additionalProperty` schema field is NOT selected.  
+**Expected:** `graph.additionalProperty` is undefined after the main field loop. `applyCustomVariations()` checks `Array.isArray(undefined)` → false → `graph.additionalProperty = [variationEntry]`. Output contains one `PropertyValue` item.

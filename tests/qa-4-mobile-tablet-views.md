@@ -137,3 +137,11 @@ Every `onInput` in `renderPropertyValueMappings()` (name and value inputs) calls
 ### TC4-30 — No regression: renderMappings() still works on tablet+
 When `isMobileView()` returns `false`, `renderMappings()` falls through to the tree rendering path and builds `.tree-mapping-editor` as before.  
 **Expected:** Tree view renders identically on tablet+ to the pre-mobile-view behaviour. No change to tree rendering code.
+
+### TC4-31 — Variation Attributes panel renders in mobile (flat) view
+`renderFlatMappings()` calls `renderCustomVariationsPanel(elements.mappingForm)` both in the early-return empty-state path and at the end of the full field-rendering path.  
+**Expected:** On mobile, the Variation Attributes panel with its heading, hint paragraphs, `custom-variation-list`, and "+ Add variation attribute" button is appended to the form — below the last field row (or below the empty-state warning). The panel is a `.variation-attrs-panel` element with border-top separating it from the fields above.
+
+### TC4-32 — Variation Attributes panel renders in tablet/tree view
+`renderMappings()` (tree view path) calls `renderCustomVariationsPanel(elements.mappingForm)` after appending the JSON tree wrap element.  
+**Expected:** On tablet and desktop, the same panel appears below the tree editor. If `state.customVariations` already has entries (e.g. from a previous add), `makeVariationRow()` is called for each and the rows are pre-populated with their `name` and `expression` values.

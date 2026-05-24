@@ -14,6 +14,7 @@ const state = {
   customFields: [],
   closedMappings: new Set(),
   includeBreadcrumbList: false,
+  customVariations: [],
 };
 
 const elements = {
@@ -41,9 +42,7 @@ const elements = {
   wizardStep1: document.querySelector("#wizardStep1"),
   wizardStep2: document.querySelector("#wizardStep2"),
   wizardStep3: document.querySelector("#wizardStep3"),
-  stepNav1: document.querySelector("#stepNav1"),
-  stepNav2: document.querySelector("#stepNav2"),
-  stepNav3: document.querySelector("#stepNav3"),
+  stepsNav: document.querySelector("#stepsNav"),
   nextButton: document.querySelector("#nextButton"),
   backButton1: document.querySelector("#backButton1"),
   backButton2: document.querySelector("#backButton2"),
@@ -118,7 +117,8 @@ function resetRecommendedFields() {
 function renderSchemaTypes() {
   const template = document.querySelector("#schemaTypeTemplate");
   elements.schemaTypeList.replaceChildren();
-  elements.sourceLink.href = currentSchema().sourceUrl;
+  const schema = currentSchema();
+  elements.sourceLink.href = schema.sourceUrl;
   elements.sourceLink.textContent = `schema.org/${state.schemaType}`;
   for (const [schemaType, schema] of Object.entries(SCHEMA_REGISTRY)) {
     if (schema.hidden) continue;
@@ -133,6 +133,7 @@ function renderSchemaTypes() {
       state.fieldSearchQuery = "";
       state.mappings = {};
       state.closedMappings = new Set();
+      state.customVariations = [];
       resetRecommendedFields();
       goToStep(1);
       renderAll();
@@ -423,7 +424,9 @@ function appendTreeGenericField(parent, field, mapping) {
   } else if (field.valueType === "expression" || field.valueType === "raw") {
     row.appendChild(tmInput(`tree-${field.id}`, mapping.expression || "", false, (val) => { mapping.expression = val; }));
   } else {
-    const ph = field.defaultField ? `{!Record.${field.defaultField}}` : "{!Record.FieldApiName}";
+    let ph;
+    if (field.valueType === "commaSeparatedArray") ph = "e.g. color, size, material";
+    else ph = field.defaultField ? `{!Record.${field.defaultField}}` : "{!Record.FieldApiName}";
     row.appendChild(tmInput(`tree-${field.id}`, mapping.expression || "", false, (val) => { mapping.expression = val; }, ph));
   }
 
@@ -571,6 +574,96 @@ function appendTreePropertyValueField(parent, field, mapping) {
   const closeRow = tmRow();
   closeRow.appendChild(tmBraceSpan("]"));
   parent.appendChild(closeRow);
+}
+
+function makeVariationRow(entry) {
+  const row = document.createElement("div");
+  row.className = "custom-variation-row";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.className = "custom-variation-name";
+  nameInput.value = entry.name;
+  nameInput.placeholder = "e.g. Angle";
+  nameInput.autocomplete = "off";
+  nameInput.spellcheck = false;
+
+  const exprInput = document.createElement("input");
+  exprInput.type = "text";
+  exprInput.className = "custom-variation-expression";
+  exprInput.value = entry.expression;
+  exprInput.placeholder = `{!Record.ProductAttributes.${entry.name || "FieldName"}__c}`;
+  exprInput.autocomplete = "off";
+  exprInput.spellcheck = false;
+
+  nameInput.addEventListener("input", () => {
+    entry.name = nameInput.value;
+    exprInput.placeholder = `{!Record.ProductAttributes.${nameInput.value || "FieldName"}__c}`;
+    renderOutput();
+  });
+
+  exprInput.addEventListener("input", () => {
+    entry.expression = exprInput.value;
+    renderOutput();
+  });
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "btn-remove";
+  removeBtn.textContent = "Remove";
+  removeBtn.addEventListener("click", () => {
+    const idx = state.customVariations.indexOf(entry);
+    if (idx !== -1) state.customVariations.splice(idx, 1);
+    row.remove();
+    renderOutput();
+  });
+
+  row.appendChild(nameInput);
+  row.appendChild(exprInput);
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function renderCustomVariationsPanel(container) {
+  const panel = document.createElement("div");
+  panel.className = "variation-attrs-panel";
+
+  const banner = document.createElement("h3");
+  banner.className = "variation-attrs-heading";
+  banner.textContent = "Variation Attributes";
+  panel.appendChild(banner);
+
+  const hint1 = document.createElement("p");
+  hint1.className = "variation-attrs-hint";
+  hint1.textContent = "Use this section if you implement Variation Products (e.g. a specific size or color of a parent product).";
+  panel.appendChild(hint1);
+
+  const hint2 = document.createElement("p");
+  hint2.className = "variation-attrs-hint";
+  hint2.textContent = "Add one row per variation attribute — each outputs as an additionalProperty / PropertyValue node in the JSON-LD and should bind to a field on the ProductAttributes object, e.g. {!Record.ProductAttributes.Color__c}.";
+  panel.appendChild(hint2);
+
+  const list = document.createElement("div");
+  list.className = "custom-variation-list";
+
+  state.customVariations.forEach((entry) => {
+    list.appendChild(makeVariationRow(entry));
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn-add-entry";
+  addBtn.textContent = "+ Add variation attribute";
+  addBtn.addEventListener("click", () => {
+    const newEntry = { name: "", expression: "" };
+    state.customVariations.push(newEntry);
+    list.insertBefore(makeVariationRow(newEntry), addBtn);
+    renderOutput();
+  });
+  list.appendChild(addBtn);
+
+  panel.appendChild(list);
+  container.appendChild(panel);
 }
 
 function appendTreeObjectField(parent, field, mapping, defaultType, typeOptions) {
@@ -760,7 +853,9 @@ function renderGenericMapping(field, mapping, container) {
     id: `${field.id}-expression`,
     label: field.label,
     value: mapping.expression || "",
-    placeholder: field.defaultField ? `{!Record.${field.defaultField}}` : "{!Record.FieldApiName}",
+    placeholder: field.valueType === "commaSeparatedArray"
+      ? "e.g. color, size, material"
+      : field.defaultField ? `{!Record.${field.defaultField}}` : "{!Record.FieldApiName}",
     onInput: (value) => { mapping.expression = value; },
   });
 }
@@ -782,6 +877,7 @@ function renderFlatMappings() {
     empty.className = "status warning";
     empty.textContent = "Select at least one schema field to configure bindings.";
     elements.mappingForm.appendChild(empty);
+    renderCustomVariationsPanel(elements.mappingForm);
     return;
   }
   const banner = document.createElement("p");
@@ -832,6 +928,8 @@ function renderFlatMappings() {
       renderGenericMapping(field, mapping, elements.mappingForm);
     }
   }
+
+  renderCustomVariationsPanel(elements.mappingForm);
 }
 
 // ── Tree mapping editor ──
@@ -846,6 +944,7 @@ function renderMappings() {
     empty.className = "status warning";
     empty.textContent = "Select at least one schema field to configure bindings.";
     elements.mappingForm.appendChild(empty);
+    renderCustomVariationsPanel(elements.mappingForm);
     return;
   }
 
@@ -885,6 +984,7 @@ function renderMappings() {
   node.appendChild(tmBraceSpan("}"));
   wrap.appendChild(node);
   elements.mappingForm.appendChild(wrap);
+  renderCustomVariationsPanel(elements.mappingForm);
 }
 
 function valueForField(field) {
@@ -939,6 +1039,12 @@ function applySelectedField(graph, field) {
     return;
   }
 
+  if (field.valueType === "commaSeparatedArray") {
+    const parts = value.split(",").map(s => s.trim()).filter(Boolean);
+    graph[field.path] = parts.length === 1 ? parts[0] : parts;
+    return;
+  }
+
   if (field.valueType === "propertyValue") {
     graph.additionalProperty = (mapping.entries || [])
       .filter((e) => e.label || e.expression)
@@ -988,6 +1094,22 @@ function graphToJsonWithExpressions(graph) {
   );
 }
 
+function applyCustomVariations(graph) {
+  const entries = state.customVariations
+    .filter((v) => v.name)
+    .map((v) => ({
+      "@type": "PropertyValue",
+      name: v.name,
+      value: v.expression || "",
+    }));
+  if (!entries.length) return;
+  if (Array.isArray(graph.additionalProperty)) {
+    graph.additionalProperty = [...graph.additionalProperty, ...entries];
+  } else {
+    graph.additionalProperty = entries;
+  }
+}
+
 function buildScript() {
   const graph = {
     "@context": "https://schema.org",
@@ -1000,6 +1122,8 @@ function buildScript() {
       applySelectedField(graph, field);
     }
   }
+
+  applyCustomVariations(graph);
 
   const productJson = graphToJsonWithExpressions(graph);
 
@@ -1044,6 +1168,12 @@ function buildWarnings() {
       if (!String(mapping.expression || "").trim()) {
         warnings.push(`${field.label}: no value set.`);
       }
+    }
+  }
+  for (const v of state.customVariations) {
+    if (!v.name) continue;
+    if (!String(v.expression || "").trim()) {
+      warnings.push(`${v.name}: no value set.`);
     }
   }
   return warnings;
@@ -1136,9 +1266,8 @@ async function loadSchemaData() {
   state.schemaError = null;
   renderFieldTiles();
   try {
-    // schema.ttl is fetched once (cached in schema-parser.js); all type parses share it.
     const results = await Promise.all(
-      Object.keys(SCHEMA_REGISTRY).map((typeName) =>
+      Object.entries(SCHEMA_REGISTRY).map(([typeName]) =>
         loadSchemaFields(typeName).then(({ fields, error }) => ({ typeName, fields, error }))
       )
     );
@@ -1156,11 +1285,30 @@ async function loadSchemaData() {
 }
 
 function updateStepNav() {
-  [1, 2, 3].forEach((n) => {
-    const btn = elements[`stepNav${n}`];
-    const isActive = n === state.currentStep;
-    btn.setAttribute("aria-current", isActive ? "step" : "false");
+  const nav = elements.stepsNav;
+  const defs = ["Select Fields", "Salesforce Bindings", "Output"];
+  nav.replaceChildren();
+  defs.forEach((label, i) => {
+    const n = i + 1;
+    if (i > 0) {
+      const divider = document.createElement("span");
+      divider.className = "step-divider";
+      divider.setAttribute("aria-hidden", "true");
+      nav.appendChild(divider);
+    }
+    const btn = document.createElement("div");
+    btn.className = "step-nav-btn";
+    btn.setAttribute("aria-current", n === state.currentStep ? "step" : "false");
     btn.classList.toggle("is-done", n < state.currentStep);
+    const numSpan = document.createElement("span");
+    numSpan.className = "step-num";
+    numSpan.textContent = String(n);
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "step-label";
+    labelSpan.textContent = label;
+    btn.appendChild(numSpan);
+    btn.appendChild(labelSpan);
+    nav.appendChild(btn);
   });
 }
 
@@ -1219,7 +1367,7 @@ function downloadOutput() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${state.schemaType.toLowerCase()}-schema-head-markup.html`;
+  link.download = `${currentSchema().downloadSlug || state.schemaType.toLowerCase()}-schema-head-markup.html`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -1394,6 +1542,9 @@ elements.clearFieldsButton.addEventListener("click", () => {
 elements.resetMappingsButton.addEventListener("click", () => {
   for (const field of allFields()) {
     state.mappings[field.id] = defaultMapping(field);
+  }
+  for (const v of state.customVariations) {
+    v.expression = "";
   }
   renderAll();
 });

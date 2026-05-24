@@ -37,16 +37,16 @@ const FIELD_OVERRIDES = {
   purchaseDate:       { typeHint: "Date" },
   releaseDate:        { typeHint: "Date" },
 
-  // ProductGroup-specific
-  productGroupID:     { label: "Product Group ID",   defaultSelected: true,  valueType: "text" },
-  variesBy:           { label: "Varies By",          defaultSelected: true,  valueType: "text" },
+  // Product variant cross-page linking
+  // No OOTB Salesforce field exposes the parent product ID from a variation child page.
+  // Requires a custom lookup field on Product2 populated via Flow.
+  inProductGroupWithID: { label: "In Product Group With ID", valueType: "text" },
 
 };
 
 // Fields shown first in Step 1 tile grid, in order, per schema type.
 const RECOMMENDED_ORDER = {
-  Product:      ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
-  ProductGroup: ["name", "description", "image", "productGroupID", "variesBy", "brand", "offers"],
+  Product: ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
 };
 
 // Fields excluded because they cannot be expressed as a Salesforce merge field

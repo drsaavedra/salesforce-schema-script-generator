@@ -12,13 +12,6 @@ const SCHEMA_REGISTRY = {
     sourceUrl: "https://schema.org/Product",
     fields: [],
   },
-  ProductGroup: {
-    label: "ProductGroup",
-    status: "Coming soon",
-    sourceUrl: "https://schema.org/ProductGroup",
-    fields: [],
-    disabled: true,
-  },
 };
 
 // ── @type picklist options ────────────────────────────────────────────────────

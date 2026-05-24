@@ -34,7 +34,7 @@ Field with `valueType: "number"`, input `"abc"`.
 
 ### TC2-05 — offers.price empty expression
 User clears the price field (expression = "").  
-**Expected:** `rawExpression("")` → token pushed as `"" || "null"` = `"null"` → emits unquoted `null`. Warning surfaced: "Offer: price expression is empty."
+**Expected:** `if (mapping.priceExpression)` guard is false — `price` key is **not added** to the offer object at all. Warning surfaced: "Offer: price expression is empty."
 
 ### TC2-06 — offers.currency empty expression
 User clears the currency field.  
@@ -121,6 +121,10 @@ Input text is a correctly formed script with all expressions quoted and well-for
 ### TC2-26 — renderWarnings() called before quoting check in copy and download
 Trace `copyOutput()` and `downloadOutput()` in `app.js`.  
 **Expected:** Both functions call `renderWarnings()` before `detectOutputErrors()`. This ensures stale quoting warnings from a previous failed attempt are cleared before re-checking, so the warnings area always reflects the current state of the textarea.
+
+### TC2-28 — Variation attribute warning: name set, expression empty
+`state.customVariations = [{ name: "Angle", expression: "" }]`.  
+**Expected:** `buildWarnings()` loop over `state.customVariations` skips entries where `!v.name`. For this entry, `v.name` is truthy and `String(v.expression || "").trim()` is `""` → pushes `"Angle: no value set."`. An entry with an empty `name` is skipped entirely (no warning for unnamed rows).
 
 ### TC2-27 — scriptOutput is read-only; no input listener attached
 Confirm that the output `<textarea id="scriptOutput">` has the `readonly` attribute set in `index.html` and that no `elements.scriptOutput.addEventListener("input", ...)` handler exists in `app.js`.  

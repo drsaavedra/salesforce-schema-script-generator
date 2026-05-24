@@ -18,8 +18,8 @@ Feed this file as the prompt to a QA subagent, pointing it at:
 ## Test cases
 
 ### TC3-01 — BreadcrumbList toggle: output
-When `state.includeBreadcrumbList` is true, `buildScript()` appends a second `<script type="application/ld+json">` block containing `{!Record.BreadcrumbList}`.  
-**Expected:** Exactly two script blocks in output. Unchecking removes the second block.
+When `state.includeBreadcrumbList` is true, `buildScript()` wraps Product and BreadcrumbList in a JSON array inside a single `<script type="application/ld+json">` block (matching Salesforce's official structured data format).  
+**Expected:** Exactly **one** script block whose content is a JSON array `[product, breadcrumb]`. The BreadcrumbList entry has `"itemListElement": "{!Record.BreadcrumbList}"`. Unchecking emits a single Product object (no array wrapper).
 
 ### TC3-02 — BreadcrumbList toggle: Schema Preview modal
 When checkbox is checked and `openSchemaPreview()` is called, the modal appends a `schema-preview-block-divider` and an expression node showing `{!Record.BreadcrumbList}`.  
@@ -86,9 +86,9 @@ If `navigator.clipboard.writeText()` rejects, tries `document.execCommand("copy"
 If both clipboard methods throw, shows `"Copy failed — select the text and copy manually."`.  
 **Expected:** No false "Copied." on total failure.
 
-### TC3-18 — Disabled schema card (ProductGroup)
-`renderSchemaTypes()` click handler checks `if (node.disabled) return;` before any state change.  
-**Expected:** Clicking ProductGroup card does nothing — no step navigation, no state mutation.
+### TC3-18 — Schema registry renders only available types
+`renderSchemaTypes()` iterates over `SCHEMA_REGISTRY`. The only current entry is `Product` (ProductGroup was removed).  
+**Expected:** Exactly one schema type card renders. No disabled cards are present. The `Product` card is selected by default (`state.schemaType === "Product"`). The click handler still guards `if (node.disabled) return;` for future-proofing, but there is no disabled card to trigger it.
 
 ### TC3-19 — propertyValue: Remove button visibility
 `appendTreePropertyValueField()` only renders the Remove button when `mapping.entries.length > 1`.  
@@ -109,3 +109,23 @@ Replacement uses `() => value` (not `value` directly).
 ### TC3-23 — Step nav aria-current
 `updateStepNav()` sets `aria-current="step"` on the active step button and `"false"` on others. Adds `is-done` to completed steps.  
 **Expected:** Correct ARIA state at each step for screen reader navigation.
+
+### TC3-24 — Variation Attributes panel appended in both mapping views
+Trace `renderFlatMappings()` and `renderMappings()` (tree view). `renderCustomVariationsPanel(elements.mappingForm)` is called at the end of each, including the early-return empty-state path.  
+**Expected:** Panel always appears below all field rows (and below the empty-state warning when no fields are selected). Neither view omits the call.
+
+### TC3-25 — Variation row: expression placeholder updates on name change
+In `makeVariationRow(entry)`, the `nameInput` has an `"input"` listener. Trace what happens when the user types `"Color"` into the name field.  
+**Expected:** `exprInput.placeholder` is updated to `"{!Record.ProductAttributes.Color__c}"`. The placeholder reflects the current `nameInput.value`; if name is cleared, placeholder falls back to `"{!Record.ProductAttributes.FieldName__c}"`.
+
+### TC3-26 — Variation row: Remove button splices entry and updates output
+`makeVariationRow(entry)` creates a Remove button. Trace its click handler.  
+**Expected:** `state.customVariations.indexOf(entry)` returns the correct index → `splice(idx, 1)` removes the entry from the array. `row.remove()` removes the DOM element. `renderOutput()` is called — output updates immediately.
+
+### TC3-27 — Schema type switch clears customVariations
+Trace the click handler in `renderSchemaTypes()` when the user selects a different schema type.  
+**Expected:** `state.customVariations = []` is called before `resetRecommendedFields()`. Any variation rows that were built for the previous type are not present when Step 2 re-renders.
+
+### TC3-28 — Reset button clears variation expressions, not names
+Trace the `resetMappingsButton` click handler.  
+**Expected:** The loop `for (const v of state.customVariations) { v.expression = ""; }` sets each entry's `expression` to `""` but leaves `name` intact. After `renderAll()`, variation rows still exist with their names but empty expression inputs.

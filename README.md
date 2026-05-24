@@ -72,6 +72,10 @@ Map each selected field to a Salesforce merge expression.
 
 **additionalProperty** — generates a `PropertyValue` array. Use the **Add property** button to define as many name/value pairs as needed; each entry maps independently to its own merge expression.
 
+**Variation Attributes** — if your store uses variation products (e.g. a "Classic Polo" with purchasable size/color variants), use the **Variation Attributes** panel to define each dimension. Add one row per attribute, give it a label (e.g. `Color`), and enter the merge expression for the custom field on your `ProductAttribute` object (e.g. `{!Record.ProductAttributes.Color__c}`). Each row outputs as an `additionalProperty` / `PropertyValue` node in the JSON-LD.
+
+To also populate `inProductGroupWithID` — the field that links a variation child page back to its parent group — a custom field on `Product2` is required. See **Known limitations** for details.
+
 **Preview Schema** — click **Preview Schema** at any point to open a live JSON tree view of your current output before moving to Step 3. Useful for catching structural issues before copying.
 
 **Reset** — click **Reset** to clear all field mappings and start Step 2 over without losing your field selections from Step 1.
@@ -123,24 +127,24 @@ After pasting into Experience Builder and publishing, validate the page's struct
 
 ### Why ProductGroup fits Salesforce B2B Commerce variation products
 
-Salesforce B2B Commerce models variation products with a **variation master** (the parent) and **variation children** (the individual SKUs). The master product holds the shared attributes — name, description, images, category — while the variants each carry their specific attribute combination. This is exactly the structure `schema.org/ProductGroup` describes: a group of products that "vary only in certain well-described ways."
+Salesforce B2B Commerce models variation products with a **variation master** (the parent) and **variation children** (the individual SKUs). The master holds shared attributes — name, description, images, category — while each variant carries its specific attribute combination. This is exactly the structure `schema.org/ProductGroup` describes: a group of products that "vary only in certain well-described ways."
 
 Google explicitly supports `ProductGroup` in their structured data guidelines for product variants, making it the right schema type for variation master PDPs.
 
 ### Planned field mapping
 
-The implementation will use Salesforce B2B Commerce's out-of-the-box `ProductVariation` data model and its native merge expressions — no custom Apex or LWC required.
+The implementation will use Salesforce B2B Commerce's out-of-the-box `ProductVariation` data model. Custom variation attribute fields — e.g. `{!Record.ProductAttributes.Color__c}` — resolve correctly in Head Markup and are supported today via the Variation Attributes panel on the Product schema. The only field that currently requires custom setup is `inProductGroupWithID` on the child side; see **Known limitations**.
 
 | schema.org field | Planned expression | Notes |
 |---|---|---|
 | `name` | `{!Record.Name}` | Master product name |
 | `description` | `{!Record.Description}` | |
 | `image` | `{!Record.ProductMedia.ProductDetailImages}` | |
-| `productGroupID` | `{!Record.ProductCode}` | Unique identifier for the variation family |
-| `variesBy` | `{!Record.ProductAttributes.<VariationAttribute>}` | The attribute dimension variants differ on (e.g. Color, Size) |
+| `productGroupID` | `{!Record.StockKeepingUnit}` | Parent SKU — Google's recommended value for this field; use SKU over Salesforce ID for stability across environments and portability to other sales channels |
+| `variesBy` | `{!Record.ProductAttributes.<VariationAttribute>}` | Custom attribute field (e.g. `Color__c`) — resolves natively |
 | `category` | `{!Record.ProductCategory.Name}` | |
 
-The `variesBy` field is the key differentiator — it tells Google what dimension the variants differ on. Admins enter the API name of the variation attribute field configured on their Product object (e.g. a custom `Variation_Color__c` field), and the tool wraps it as `{!Record.ProductAttributes.Variation_Color__c}`.
+No custom Apex or LWC is required for the `ProductGroup` fields above. Linking variation child pages to the parent group via `inProductGroupWithID` requires a custom field workaround until Salesforce resolves the `VariantParentId` limitation.
 
 ---
 
@@ -188,12 +192,12 @@ Each test file is self-contained with instructions for which source files to rea
 
 | File | Scope | Cases |
 |---|---|---|
-| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output | 15 |
-| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser, output structure validation | 27 |
-| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases | 23 |
-| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer | 30 |
+| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output, commaSeparatedArray, variation merging | 19 |
+| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser, output structure validation | 28 |
+| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases, variation attributes UI | 28 |
+| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer, variation panel | 32 |
 
-All 95 test cases must pass before merging to `main`.
+All 107 test cases must pass before merging to `main`.
 
 ---
 
@@ -224,6 +228,7 @@ tests/
 - **No batch generation** — the tool generates output for one page type per session.
 - **BreadcrumbList output is fixed** — the BreadcrumbList block uses Salesforce's native `{!Record.BreadcrumbList}` expression and cannot be customized.
 - **aggregateRating and review require a custom integration** — these fields depend on aggregated child data that cannot be expressed as a single merge expression and are intentionally excluded from the field list.
+- **`inProductGroupWithID` requires a custom field** — `{!Record.ProductAttributes.VariantParentId}`, the standard field that holds the parent Product2 ID on a variation child, does not resolve via Head Markup merge expressions even though custom fields on the same `ProductAttribute` object (e.g. `{!Record.ProductAttributes.Color__c}`) do. This blocks the clean OOTB path for Google's [Product Variant Rich Results](https://developers.google.com/search/docs/appearance/structured-data/product-variants) — which allows Google to group all variant pages under a single search listing with variant selectors, improving click-through rate and eliminating inter-variant cannibalization in search results. **Workaround:** (1) create a custom text field on `Product2` to store the parent's SKU (e.g. `VariationParentSKU__c`), (2) populate it via a Flow triggered on `ProductAttribute` insert by looking up the parent product's `StockKeepingUnit`, (3) map it in Head Markup as `{!Record.VariationParentSKU__c}`. Use the parent's SKU — not the Salesforce ID — because Google calls this field the "parent SKU", SKU is stable across sandbox and production environments, and it remains consistent if the product is listed on other channels (Amazon, Google Shopping, etc.). If you'd like to see this resolved natively, vote for or file an idea on the [Salesforce Ideas portal](https://ideas.salesforce.com/).
 
 ---
 
