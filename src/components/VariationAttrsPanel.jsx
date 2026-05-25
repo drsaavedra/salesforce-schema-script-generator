@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export default function VariationAttrsPanel({ entries, onEntriesChange }) {
   function handleAdd() {
     onEntriesChange([...entries, { id: crypto.randomUUID(), name: '', expression: '' }]);
