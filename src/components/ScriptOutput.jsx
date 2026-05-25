@@ -309,6 +309,7 @@ export default function ScriptOutput({
     const errors = detectOutputErrors(scriptText);
     if (errors.length) {
       setCopyStatus(errors[0]);
+      setTimeout(() => setCopyStatus(''), 2200);
       return;
     }
     try {
@@ -334,6 +335,7 @@ export default function ScriptOutput({
     const errors = detectOutputErrors(scriptText);
     if (errors.length) {
       setCopyStatus(errors[0]);
+      setTimeout(() => setCopyStatus(''), 2200);
       return;
     }
     const blob = new Blob([scriptText], { type: 'text/html' });
