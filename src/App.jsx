@@ -52,11 +52,12 @@ export default function App() {
         next.delete(field.id);
       } else {
         next.add(field.id);
-        if (!mappings[field.id]) {
-          setMappings(m => ({ ...m, [field.id]: defaultMapping(field) }));
-        }
       }
       return next;
+    });
+    setMappings(prev => {
+      if (prev[field.id]) return prev;
+      return { ...prev, [field.id]: defaultMapping(field) };
     });
   }
 
@@ -72,6 +73,7 @@ export default function App() {
 
   function handleClearAll() {
     setSelectedFields(new Set());
+    setMappings({});
   }
 
   function handleRecommended() {
