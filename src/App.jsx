@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { loadSchemaFields } from './schema-parser.js';
 import { DEFAULT_OFFER } from './constants.js';
 import StepsNav from './components/StepsNav.jsx';
+import FieldList from './components/FieldList.jsx';
 
 function buildDefaultMappings(fields) {
   const mappings = {};
@@ -123,7 +124,17 @@ export default function App() {
         </div>
 
         {currentStep === 1 && (
-          <p>[FieldList placeholder — {fields.length} fields, {selectedFields.size} selected]</p>
+          <FieldList
+            fields={fields}
+            schemaLoading={schemaLoading}
+            schemaError={schemaError}
+            selectedFields={selectedFields}
+            onToggleField={handleToggleField}
+            onSelectAll={handleSelectAll}
+            onClearAll={handleClearAll}
+            onRecommended={handleRecommended}
+            onNext={() => setCurrentStep(2)}
+          />
         )}
         {currentStep === 2 && (
           <p>[MappingEditor + VariationAttrsPanel placeholder]</p>
@@ -132,19 +143,6 @@ export default function App() {
           <p>[ScriptOutput placeholder]</p>
         )}
 
-        {currentStep === 1 && (
-          <div className="step-footer">
-            <span />
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={selectedFields.size === 0}
-              onClick={() => setCurrentStep(2)}
-            >
-              Next → ({selectedFields.size} selected)
-            </button>
-          </div>
-        )}
         {currentStep === 2 && (
           <div className="step-footer">
             <button type="button" onClick={() => setCurrentStep(1)}>← Back</button>

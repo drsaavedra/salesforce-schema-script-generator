@@ -5,7 +5,7 @@
 // ── Schema registry ───────────────────────────────────────────────────────────
 // Fields arrays start empty and are populated at load time by loadSchemaData() in app.js,
 // which calls schema-parser.js and writes the results back here.
-const SCHEMA_REGISTRY = {
+export const SCHEMA_REGISTRY = {
   Product: {
     label: "Product",
     status: "",
@@ -15,13 +15,13 @@ const SCHEMA_REGISTRY = {
 };
 
 // ── @type picklist options ────────────────────────────────────────────────────
-const OFFER_TYPES        = ["Offer", "AggregateOffer"];
-const SELLER_TYPES       = ["Organization", "Corporation", "LocalBusiness", "Person"];
-const BRAND_TYPES        = ["Brand", "Organization"];
-const ORGANIZATION_TYPES = ["Organization", "Corporation", "LocalBusiness"];
+export const OFFER_TYPES        = ["Offer", "AggregateOffer"];
+export const SELLER_TYPES       = ["Organization", "Corporation", "LocalBusiness", "Person"];
+export const BRAND_TYPES        = ["Brand", "Organization"];
+export const ORGANIZATION_TYPES = ["Organization", "Corporation", "LocalBusiness"];
 
 // ── Type hint badge tooltips ──────────────────────────────────────────────────
-const TYPE_HINT_DETAILS = {
+export const TYPE_HINT_DETAILS = {
   Boolean:    "Must be true or false — map to a Salesforce checkbox (Boolean) field",
   Number:     "Must be a plain number with no quotes or currency symbol, e.g. 29.99",
   URL:        "Must be a full URL starting with https://",
@@ -30,7 +30,7 @@ const TYPE_HINT_DETAILS = {
 };
 
 // ── Default offer structure ───────────────────────────────────────────────────
-const DEFAULT_OFFER = {
+export const DEFAULT_OFFER = {
   offerType:          "Offer",
   priceExpression:    "{!Record.Offers.Price}",
   currencyExpression: "{!Record.Offers.Currency}",

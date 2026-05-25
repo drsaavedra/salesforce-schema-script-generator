@@ -218,7 +218,7 @@ function _ensureParsed() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 // Returns { fields, error } — error is null on success, a string message on failure.
-async function loadSchemaFields(typeName = "Product") {
+export async function loadSchemaFields(typeName = "Product") {
   await _ensureParsed();
   if (_parseError) {
     return { fields: [], error: `Could not load schema.ttl: ${_parseError.message}. If testing locally, serve the docs/ folder over HTTP (e.g. VS Code Live Server or: npx serve docs).` };
