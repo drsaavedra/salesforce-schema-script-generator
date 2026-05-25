@@ -12,17 +12,15 @@ export default function StepsNav({ currentStep, onGoToStep }) {
         return (
           <Fragment key={n}>
             {i > 0 && <span className="step-divider" aria-hidden="true" />}
-            <div
+            <button
+              type="button"
               className={'step-nav-btn' + (isDone ? ' is-done' : '')}
               aria-current={isCurrent ? 'step' : undefined}
               onClick={() => onGoToStep(n)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onGoToStep(n); }}
             >
               <span className="step-num">{n}</span>
               <span className="step-label">{label}</span>
-            </div>
+            </button>
           </Fragment>
         );
       })}
