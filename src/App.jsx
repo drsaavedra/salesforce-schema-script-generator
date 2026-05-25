@@ -3,6 +3,7 @@ import { loadSchemaFields } from './schema-parser.js';
 import { DEFAULT_OFFER } from './constants.js';
 import StepsNav from './components/StepsNav.jsx';
 import FieldList from './components/FieldList.jsx';
+import MappingEditor from './components/MappingEditor.jsx';
 
 function buildDefaultMappings(fields) {
   const mappings = {};
@@ -137,17 +138,22 @@ export default function App() {
           />
         )}
         {currentStep === 2 && (
-          <p>[MappingEditor + VariationAttrsPanel placeholder]</p>
+          <>
+            <MappingEditor
+              selectedFields={selectedFields}
+              fields={fields}
+              mappings={mappings}
+              onMappingChange={handleMappingChange}
+              onReset={handleReset}
+            />
+            <div className="step-footer">
+              <button type="button" onClick={() => setCurrentStep(1)}>← Back</button>
+              <button type="button" className="btn-primary" onClick={() => setCurrentStep(3)}>Finish →</button>
+            </div>
+          </>
         )}
         {currentStep === 3 && (
           <p>[ScriptOutput placeholder]</p>
-        )}
-
-        {currentStep === 2 && (
-          <div className="step-footer">
-            <button type="button" onClick={() => setCurrentStep(1)}>← Back</button>
-            <button type="button" className="btn-primary" onClick={() => setCurrentStep(3)}>Finish →</button>
-          </div>
         )}
         {currentStep === 3 && (
           <div className="step-footer">
