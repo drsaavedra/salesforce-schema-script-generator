@@ -1,4 +1,4 @@
-// Parses docs/data/schema.ttl (local copy of schema.org Turtle file) and returns
+// Parses public/data/schema.ttl (local copy of schema.org Turtle file) and returns
 // field descriptor objects for a given schema type.
 //
 // How it works:
