@@ -7,3 +7,6 @@ learning.md
 
 # Local test artifacts
 test-files/
+
+# Node
+node_modules/
