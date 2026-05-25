@@ -15,7 +15,7 @@ function buildDefaultMappings(fields) {
 
 function defaultMapping(field) {
   if (field.valueType === 'offer') return { ...DEFAULT_OFFER };
-  if (field.valueType === 'propertyValue') return { entries: [{ label: '', expression: '' }] };
+  if (field.valueType === 'propertyValue') return { entries: [{ id: crypto.randomUUID(), label: '', expression: '' }] };
   if (field.valueType === 'brand') return { expression: '', type: 'Brand' };
   if (field.valueType === 'organization') return { expression: '', type: 'Organization' };
   if (field.defaultExpression !== undefined) return { expression: field.defaultExpression };

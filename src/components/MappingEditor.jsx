@@ -212,7 +212,7 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
       </div>
       <div className="tree-children">
         {mapping.entries.map((entry, idx) => (
-          <div key={idx}>
+          <div key={entry.id}>
             <div className="tree-row"><span className="tree-brace">{"{"}</span></div>
             <div className="tree-children">
               <div className="tree-row">
@@ -269,7 +269,7 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
             className="btn-add-entry tree-array-btn"
             onClick={() => onMappingChange(field.id, m => ({
               ...m,
-              entries: [...m.entries, { label: '', expression: '' }],
+              entries: [...m.entries, { id: crypto.randomUUID(), label: '', expression: '' }],
             }))}
           >
             + Add property
@@ -456,7 +456,7 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
   return (
     <>
       {mapping.entries.map((entry, idx) => (
-        <div key={idx} className="property-group">
+        <div key={entry.id} className="property-group">
           <div className="property-group-header">
             <span>Property {idx + 1}</span>
             {mapping.entries.length > 1 && (
@@ -498,7 +498,7 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
         className="btn-add-entry"
         onClick={() => onMappingChange(field.id, m => ({
           ...m,
-          entries: [...m.entries, { label: '', expression: '' }],
+          entries: [...m.entries, { id: crypto.randomUUID(), label: '', expression: '' }],
         }))}
       >
         + Add another property
