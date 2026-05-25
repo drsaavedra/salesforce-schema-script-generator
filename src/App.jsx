@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { loadSchemaFields } from './schema-parser.js';
 import { DEFAULT_OFFER } from './constants.js';
+import StepsNav from './components/StepsNav.jsx';
 
 function buildDefaultMappings(fields) {
   const mappings = {};
@@ -113,7 +114,7 @@ export default function App() {
       </header>
 
       <div className="wizard-container">
-        <p>[StepsNav placeholder — step {currentStep}]</p>
+        <StepsNav currentStep={currentStep} onGoToStep={setCurrentStep} />
 
         <div className="schema-toolbar">
           <button type="button" className="btn-preview-schema" onClick={() => setIsPreviewOpen(true)}>
