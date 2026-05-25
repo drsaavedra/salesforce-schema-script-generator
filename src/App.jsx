@@ -6,6 +6,7 @@ import FieldList from './components/FieldList.jsx';
 import MappingEditor from './components/MappingEditor.jsx';
 import VariationAttrsPanel from './components/VariationAttrsPanel.jsx';
 import ScriptOutput from './components/ScriptOutput.jsx';
+import SchemaPreviewModal from './components/SchemaPreviewModal.jsx';
 
 function buildDefaultMappings(fields) {
   const mappings = {};
@@ -172,9 +173,15 @@ export default function App() {
         )}
       </div>
 
-      {isPreviewOpen && (
-        <p>[SchemaPreviewModal placeholder]</p>
-      )}
+      <SchemaPreviewModal
+        isOpen={isPreviewOpen}
+        fields={fields}
+        selectedFields={selectedFields}
+        mappings={mappings}
+        customVariations={customVariations}
+        includeBreadcrumbList={includeBreadcrumbList}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </>
   );
 }
