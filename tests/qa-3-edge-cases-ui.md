@@ -26,8 +26,8 @@ When checkbox is checked and `openSchemaPreview()` is called, the modal appends 
 **Expected:** Both product schema tree AND breadcrumb section visible in modal.
 
 ### TC3-03 — Modal focus trap: inert attribute
-`openSchemaPreview()` sets `inert = true` on `.app-header`, `.schema-bar`, `.wizard-container`.  
-`closeSchemaPreview()` removes inert from all three.  
+`openSchemaPreview()` sets `inert = true` on `.app-header` and `.wizard-container`.  
+`closeSchemaPreview()` removes inert from both.  
 **Expected:** Background content is inaccessible while modal is open; restored on close.
 
 ### TC3-04 — Modal: Escape key closes
@@ -86,10 +86,6 @@ If `navigator.clipboard.writeText()` rejects, tries `document.execCommand("copy"
 If both clipboard methods throw, shows `"Copy failed — select the text and copy manually."`.  
 **Expected:** No false "Copied." on total failure.
 
-### TC3-18 — Schema registry renders only available types
-`renderSchemaTypes()` iterates over `SCHEMA_REGISTRY`. The only current entry is `Product` (ProductGroup was removed).  
-**Expected:** Exactly one schema type card renders. No disabled cards are present. The `Product` card is selected by default (`state.schemaType === "Product"`). The click handler still guards `if (node.disabled) return;` for future-proofing, but there is no disabled card to trigger it.
-
 ### TC3-19 — propertyValue: Remove button visibility
 `appendTreePropertyValueField()` only renders the Remove button when `mapping.entries.length > 1`.  
 **Expected:** Single entry has no Remove button. Two or more entries each have Remove.
@@ -121,10 +117,6 @@ In `makeVariationRow(entry)`, the `nameInput` has an `"input"` listener. Trace w
 ### TC3-26 — Variation row: Remove button splices entry and updates output
 `makeVariationRow(entry)` creates a Remove button. Trace its click handler.  
 **Expected:** `state.customVariations.indexOf(entry)` returns the correct index → `splice(idx, 1)` removes the entry from the array. `row.remove()` removes the DOM element. `renderOutput()` is called — output updates immediately.
-
-### TC3-27 — Schema type switch clears customVariations
-Trace the click handler in `renderSchemaTypes()` when the user selects a different schema type.  
-**Expected:** `state.customVariations = []` is called before `resetRecommendedFields()`. Any variation rows that were built for the previous type are not present when Step 2 re-renders.
 
 ### TC3-28 — Reset button clears variation expressions, not names
 Trace the `resetMappingsButton` click handler.  

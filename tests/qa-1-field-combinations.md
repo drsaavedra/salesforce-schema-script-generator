@@ -66,10 +66,6 @@ Trace `selectAllButton` click handler — calls `state.selectedFields.add()` and
 Trace `recommendedButton` click handler → `resetRecommendedFields()`.  
 **Expected:** Only fields where `defaultSelected === true` are selected. Non-recommended mappings already in `state.mappings` are preserved (not wiped).
 
-### TC1-13 — Schema type switch clears stale mappings
-Trace `renderSchemaTypes()` click handler.  
-**Expected:** `state.mappings = {}` before `resetRecommendedFields()` so old type's mappings don't bleed into new type.
-
 ### TC1-14 — Back to Step 1 after Step 2 changes
 Deselect a field in Step 1, go to Step 2, confirm that field's row is gone from the mapping editor.  
 **Expected:** `renderMappings()` only renders fields present in `state.selectedFields`.

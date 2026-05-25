@@ -89,10 +89,6 @@ In `renderPropertyValueMappings()`, the Remove button is added to `.property-gro
 `state` object contains `closedMappings: new Set()`.  
 **Expected:** `state.closedMappings` exists and is a Set at app init.
 
-### TC4-19 — closedMappings: reset on schema type change
-When the schema type card is clicked in `renderSchemaTypes()`, `state.closedMappings = new Set()` is called before `resetRecommendedFields()`.  
-**Expected:** All accordions reset to open state when switching schema types.
-
 ### TC4-20 — Shared state: mappings survive view switch
 `state.mappings` is the single source of truth for both form and tree views. Switching from tree to form view (or vice versa) calls `renderMappings()`, which re-reads `state.mappings`. Typing into a form view input updates `mapping.expression` in state before calling `renderOutput()`.  
 **Expected:** Values entered in the form view appear in the output. Switching to tree view (resize ≥641px) shows the same values in tree inputs.

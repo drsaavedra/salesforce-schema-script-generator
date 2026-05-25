@@ -1,4 +1,4 @@
-# Salesforce B2B Commerce Schema Script Generator
+# Salesforce B2B Commerce Product Schema Script Generator
 
 A free, browser-based tool that generates paste-ready JSON-LD structured data scripts for Salesforce B2B Commerce Experience Builder.
 
@@ -12,9 +12,7 @@ Salesforce B2B Commerce product pages don't include structured data (JSON-LD) ou
 
 This tool automates that. Pick the schema fields you want, map them to your Salesforce field API names, and get a ready-to-paste `<script type="application/ld+json">` block — formatted exactly as Experience Builder's Head Markup expects it.
 
-**Currently supported:** `Product` (for Product Detail Pages)
-
-**Coming soon:** `ProductGroup` (for variation master products — products with color/size/material variants)
+**Supported schema type:** `Product` (for Product Detail Pages)
 
 ---
 
@@ -74,8 +72,6 @@ Map each selected field to a Salesforce merge expression.
 
 **Variation Attributes** — if your store uses variation products (e.g. a "Classic Polo" with purchasable size/color variants), use the **Variation Attributes** panel to define each dimension. Add one row per attribute, give it a label (e.g. `Color`), and enter the merge expression for the custom field on your `ProductAttribute` object (e.g. `{!Record.ProductAttributes.Color__c}`). Each row outputs as an `additionalProperty` / `PropertyValue` node in the JSON-LD.
 
-To also populate `inProductGroupWithID` — the field that links a variation child page back to its parent group — a custom field on `Product2` is required. See **Known limitations** for details.
-
 **Preview Schema** — click **Preview Schema** at any point to open a live JSON tree view of your current output before moving to Step 3. Useful for catching structural issues before copying.
 
 **Reset** — click **Reset** to clear all field mappings and start Step 2 over without losing your field selections from Step 1.
@@ -118,33 +114,6 @@ Admins who need `aggregateRating` or `review` markup are doing a custom integrat
 ## Validating your output
 
 After pasting into Experience Builder and publishing, validate the page's structured data with the [Schema.org Validator](https://validator.schema.org/). Enter your page URL to check that Google can read the markup correctly.
-
----
-
-## Planned: ProductGroup
-
-`ProductGroup` is next on the roadmap, targeting **variation master product pages** — pages in Salesforce B2B Commerce where a single parent product (e.g. "Classic Polo") has purchasable variants that differ by attributes like color, size, or material.
-
-### Why ProductGroup fits Salesforce B2B Commerce variation products
-
-Salesforce B2B Commerce models variation products with a **variation master** (the parent) and **variation children** (the individual SKUs). The master holds shared attributes — name, description, images, category — while each variant carries its specific attribute combination. This is exactly the structure `schema.org/ProductGroup` describes: a group of products that "vary only in certain well-described ways."
-
-Google explicitly supports `ProductGroup` in their structured data guidelines for product variants, making it the right schema type for variation master PDPs.
-
-### Planned field mapping
-
-The implementation will use Salesforce B2B Commerce's out-of-the-box `ProductVariation` data model. Custom variation attribute fields — e.g. `{!Record.ProductAttributes.Color__c}` — resolve correctly in Head Markup and are supported today via the Variation Attributes panel on the Product schema. The only field that currently requires custom setup is `inProductGroupWithID` on the child side; see **Known limitations**.
-
-| schema.org field | Planned expression | Notes |
-|---|---|---|
-| `name` | `{!Record.Name}` | Master product name |
-| `description` | `{!Record.Description}` | |
-| `image` | `{!Record.ProductMedia.ProductDetailImages}` | |
-| `productGroupID` | `{!Record.StockKeepingUnit}` | Parent SKU — Google's recommended value for this field; use SKU over Salesforce ID for stability across environments and portability to other sales channels |
-| `variesBy` | `{!Record.ProductAttributes.<VariationAttribute>}` | Custom attribute field (e.g. `Color__c`) — resolves natively |
-| `category` | `{!Record.ProductCategory.Name}` | |
-
-No custom Apex or LWC is required for the `ProductGroup` fields above. Linking variation child pages to the parent group via `inProductGroupWithID` requires a custom field workaround until Salesforce resolves the `VariantParentId` limitation.
 
 ---
 
@@ -192,12 +161,12 @@ Each test file is self-contained with instructions for which source files to rea
 
 | File | Scope | Cases |
 |---|---|---|
-| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output, commaSeparatedArray, variation merging | 19 |
+| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output, commaSeparatedArray, variation merging | 18 |
 | `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser, output structure validation | 28 |
-| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases, variation attributes UI | 28 |
-| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer, variation panel | 32 |
+| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases, variation attributes UI | 26 |
+| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer, variation panel | 31 |
 
-All 107 test cases must pass before merging to `main`.
+All 103 test cases must pass before merging to `main`.
 
 ---
 
@@ -216,6 +185,7 @@ docs/
     schema.ttl      — bundled schema.org vocabulary (pinned, manually updated)
 tests/
   qa-*.md           — static analysis test cases (run via Claude Code subagents)
+learning.md         — learning journal: architectural decisions and lessons from building this tool
 ```
 
 ---
@@ -223,12 +193,11 @@ tests/
 ## Known limitations
 
 - **Salesforce B2B Commerce only** — merge expressions like `{!Record.Name}` are specific to Salesforce B2B Commerce. This tool does not generate markup for B2C Commerce or other Salesforce clouds.
-- **One schema type at a time** — the tool generates one `Product` script per page. `ProductGroup` support is planned but not yet available.
+- **Product schema only** — the tool generates `Product` structured data. `ProductGroup` variant structured data is intentionally out of scope: Head Markup is a single shared per-record template that cannot conditionally emit a self-contained `ProductGroup` entity per page, which Google requires for variant rich results. See the [learning journal](learning.md) for the full reasoning, and why a custom LWC is the right tool for that case.
 - **No configuration save/load** — there is no way to save a mapping configuration and reload it in a future session. Each session starts fresh.
 - **No batch generation** — the tool generates output for one page type per session.
 - **BreadcrumbList output is fixed** — the BreadcrumbList block uses Salesforce's native `{!Record.BreadcrumbList}` expression and cannot be customized.
 - **aggregateRating and review require a custom integration** — these fields depend on aggregated child data that cannot be expressed as a single merge expression and are intentionally excluded from the field list.
-- **`inProductGroupWithID` requires a custom field** — `{!Record.ProductAttributes.VariantParentId}`, the standard field that holds the parent Product2 ID on a variation child, does not resolve via Head Markup merge expressions even though custom fields on the same `ProductAttribute` object (e.g. `{!Record.ProductAttributes.Color__c}`) do. This blocks the clean OOTB path for Google's [Product Variant Rich Results](https://developers.google.com/search/docs/appearance/structured-data/product-variants) — which allows Google to group all variant pages under a single search listing with variant selectors, improving click-through rate and eliminating inter-variant cannibalization in search results. **Workaround:** (1) create a custom text field on `Product2` to store the parent's SKU (e.g. `VariationParentSKU__c`), (2) populate it via a Flow triggered on `ProductAttribute` insert by looking up the parent product's `StockKeepingUnit`, (3) map it in Head Markup as `{!Record.VariationParentSKU__c}`. Use the parent's SKU — not the Salesforce ID — because Google calls this field the "parent SKU", SKU is stable across sandbox and production environments, and it remains consistent if the product is listed on other channels (Amazon, Google Shopping, etc.). If you'd like to see this resolved natively, vote for or file an idea on the [Salesforce Ideas portal](https://ideas.salesforce.com/).
 
 ---
 

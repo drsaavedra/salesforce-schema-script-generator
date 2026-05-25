@@ -18,7 +18,6 @@ const state = {
 };
 
 const elements = {
-  schemaTypeList: document.querySelector("#schemaTypeList"),
   fieldList: document.querySelector("#fieldList"),
   mappingForm: document.querySelector("#mappingForm"),
   scriptOutput: document.querySelector("#scriptOutput"),
@@ -36,7 +35,6 @@ const elements = {
   breadcrumbToggle: document.querySelector("#breadcrumbToggle"),
   copyButton: document.querySelector("#copyButton"),
   downloadButton: document.querySelector("#downloadButton"),
-  sourceLink: document.querySelector(".source-link"),
   outputWarnings: document.querySelector("#outputWarnings"),
   fieldSearch: document.querySelector("#fieldSearch"),
   wizardStep1: document.querySelector("#wizardStep1"),
@@ -111,34 +109,6 @@ function resetRecommendedFields() {
   for (const field of recommended) {
     state.selectedFields.add(field.id);
     state.mappings[field.id] = defaultMapping(field);
-  }
-}
-
-function renderSchemaTypes() {
-  const template = document.querySelector("#schemaTypeTemplate");
-  elements.schemaTypeList.replaceChildren();
-  const schema = currentSchema();
-  elements.sourceLink.href = schema.sourceUrl;
-  elements.sourceLink.textContent = `schema.org/${state.schemaType}`;
-  for (const [schemaType, schema] of Object.entries(SCHEMA_REGISTRY)) {
-    if (schema.hidden) continue;
-    const node = template.content.firstElementChild.cloneNode(true);
-    node.querySelector(".schema-card-title").textContent = schema.label;
-    node.querySelector(".schema-card-status").textContent = schema.status;
-    node.disabled = Boolean(schema.disabled);
-    node.setAttribute("aria-pressed", schemaType === state.schemaType ? "true" : "false");
-    node.addEventListener("click", () => {
-      if (node.disabled) return;
-      state.schemaType = schemaType;
-      state.fieldSearchQuery = "";
-      state.mappings = {};
-      state.closedMappings = new Set();
-      state.customVariations = [];
-      resetRecommendedFields();
-      goToStep(1);
-      renderAll();
-    });
-    elements.schemaTypeList.appendChild(node);
   }
 }
 
@@ -1322,7 +1292,6 @@ function goToStep(step) {
 }
 
 function renderAll() {
-  renderSchemaTypes();
   renderFieldTiles();
   renderMappings();
   renderOutput();
@@ -1500,14 +1469,12 @@ function openSchemaPreview() {
 
   elements.schemaPreviewOverlay.hidden = false;
   document.querySelector(".app-header").inert = true;
-  document.querySelector(".schema-bar").inert = true;
   document.querySelector(".wizard-container").inert = true;
   elements.closePreviewButton.focus();
 }
 
 function closeSchemaPreview() {
   document.querySelector(".app-header").inert = false;
-  document.querySelector(".schema-bar").inert = false;
   document.querySelector(".wizard-container").inert = false;
   elements.schemaPreviewOverlay.hidden = true;
   elements.previewSchemaButton.focus();

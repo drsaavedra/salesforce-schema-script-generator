@@ -37,9 +37,6 @@ const FIELD_OVERRIDES = {
   purchaseDate:       { typeHint: "Date" },
   releaseDate:        { typeHint: "Date" },
 
-  // Product variant cross-page linking
-  // No OOTB Salesforce field exposes the parent product ID from a variation child page.
-  // Requires a custom lookup field on Product2 populated via Flow.
   inProductGroupWithID: { label: "In Product Group With ID", valueType: "text" },
 
 };

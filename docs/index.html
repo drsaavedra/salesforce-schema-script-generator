@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Salesforce Commerce Schema Script Generator</title>
+    <title>Salesforce B2B Commerce Product Schema Script Generator</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -17,10 +17,6 @@
         <a class="source-link" href="https://schema.org/Product" target="_blank" rel="noreferrer">schema.org/Product</a>
       </div>
     </header>
-
-    <div class="schema-bar">
-      <div class="schema-bar-inner" id="schemaTypeList"></div>
-    </div>
 
     <div class="wizard-container">
       <nav class="steps-nav" id="stepsNav" aria-label="Steps"></nav>
@@ -99,13 +95,6 @@
         <div id="schemaPreviewTree" class="schema-preview-tree"></div>
       </div>
     </div>
-
-    <template id="schemaTypeTemplate">
-      <button type="button" class="schema-card">
-        <span class="schema-card-title"></span>
-        <span class="schema-card-status"></span>
-      </button>
-    </template>
 
     <template id="mappingTemplate">
       <div class="mapping-row">

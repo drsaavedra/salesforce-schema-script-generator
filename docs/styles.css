@@ -125,46 +125,6 @@ h2 {
   white-space: nowrap;
 }
 
-/* ── Schema type bar ── */
-.schema-bar {
-  background: #ffffff;
-  border-bottom: 1px solid var(--line);
-  padding: 12px clamp(16px, 4vw, 48px);
-}
-
-.schema-bar-inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.schema-card {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  min-height: 40px;
-  padding: 8px 16px;
-}
-
-.schema-card[aria-pressed="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-
-.schema-card:disabled {
-  color: var(--muted);
-  cursor: not-allowed;
-}
-
-.schema-card-title {
-  font-weight: 700;
-}
-
-.schema-card-status {
-  color: var(--muted);
-  font-size: 12px;
-}
-
 /* ── Wizard container ── */
 .wizard-container {
   max-width: 900px;
