@@ -3,8 +3,6 @@ import { DEFAULT_OFFER } from '../constants.js';
 
 // ── Raw expression helpers ────────────────────────────────────────────────────
 
-const RAW_TOKEN_PREFIX = '__SCHEMA_GENERATOR_RAW_';
-
 function rawExpression(value) {
   return { __rawExpression: value };
 }
