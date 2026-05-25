@@ -5,6 +5,7 @@ import StepsNav from './components/StepsNav.jsx';
 import FieldList from './components/FieldList.jsx';
 import MappingEditor from './components/MappingEditor.jsx';
 import VariationAttrsPanel from './components/VariationAttrsPanel.jsx';
+import ScriptOutput from './components/ScriptOutput.jsx';
 
 function buildDefaultMappings(fields) {
   const mappings = {};
@@ -32,6 +33,7 @@ export default function App() {
   const [mappings, setMappings] = useState({});
   const [customVariations, setCustomVariations] = useState([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [includeBreadcrumbList, setIncludeBreadcrumbList] = useState(false);
 
   useEffect(() => {
     loadSchemaFields('Product').then(({ fields: loadedFields, error }) => {
@@ -158,12 +160,15 @@ export default function App() {
           </>
         )}
         {currentStep === 3 && (
-          <p>[ScriptOutput placeholder]</p>
-        )}
-        {currentStep === 3 && (
-          <div className="step-footer">
-            <button type="button" onClick={() => setCurrentStep(2)}>← Edit</button>
-          </div>
+          <ScriptOutput
+            selectedFields={selectedFields}
+            fields={fields}
+            mappings={mappings}
+            customVariations={customVariations}
+            includeBreadcrumbList={includeBreadcrumbList}
+            onBreadcrumbToggle={setIncludeBreadcrumbList}
+            onBack={() => setCurrentStep(2)}
+          />
         )}
       </div>
 
