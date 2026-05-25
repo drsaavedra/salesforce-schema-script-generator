@@ -4,6 +4,7 @@ import { DEFAULT_OFFER } from './constants.js';
 import StepsNav from './components/StepsNav.jsx';
 import FieldList from './components/FieldList.jsx';
 import MappingEditor from './components/MappingEditor.jsx';
+import VariationAttrsPanel from './components/VariationAttrsPanel.jsx';
 
 function buildDefaultMappings(fields) {
   const mappings = {};
@@ -145,6 +146,10 @@ export default function App() {
               mappings={mappings}
               onMappingChange={handleMappingChange}
               onReset={handleReset}
+            />
+            <VariationAttrsPanel
+              entries={customVariations}
+              onEntriesChange={setCustomVariations}
             />
             <div className="step-footer">
               <button type="button" onClick={() => setCurrentStep(1)}>← Back</button>
