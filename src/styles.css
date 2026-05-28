@@ -493,7 +493,11 @@ h2 {
   color: var(--ink);
   font-size: 13px;
   margin: 0;
-  padding: 10px 14px;
+  padding: 10px 14px 10px 30px;
+}
+
+.mapping-banner li + li {
+  margin-top: 5px;
 }
 
 .mapping-banner code {

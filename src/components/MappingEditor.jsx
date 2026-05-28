@@ -625,9 +625,10 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
       {isMobile ? (
         // ── Flat form view (mobile ≤640px) ──
         <div className="mapping-form">
-          <p className="mapping-banner">
-            Enter a Salesforce merge field like <code>{'{!Record.Name}'}</code>, or a static value for any field. Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.
-          </p>
+          <ul className="mapping-banner">
+            <li>Enter a Salesforce merge field like <code>{'{!Record.Name}'}</code>, or a static value for any field.</li>
+            <li>Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.</li>
+          </ul>
           {selected.map(field => {
             const mapping = mappings[field.id] || {};
             const needsAccordion = field.valueType === 'offer' || field.valueType === 'propertyValue';
@@ -658,9 +659,10 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
       ) : (
         // ── Tree view (desktop ≥641px) ──
         <div className="mapping-form">
-          <p className="mapping-banner">
-            Bind each property to a Salesforce merge expression — e.g. {'{!Record.FieldApiName}'} — or a static value. Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.
-          </p>
+          <ul className="mapping-banner">
+            <li>Bind each property to a Salesforce merge expression — e.g. <code>{'{!Record.FieldApiName}'}</code> — or a static value.</li>
+            <li>Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.</li>
+          </ul>
           <div className="tree-mapping-editor">
             <div className="tree-node">
               <span className="tree-brace">{"{"}</span>
