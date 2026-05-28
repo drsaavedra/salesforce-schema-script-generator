@@ -19,12 +19,17 @@ function TreeInput({ id, value, disabled, onChange, placeholder }) {
   const [isFocused, setIsFocused] = useState(false);
   const isMergeExpression = placeholder?.startsWith('{!') ?? false;
   const isEmpty = !value;
-  const isPartial = isFocused && !disabled && value && !value.startsWith('{!');
-  const showTabHint = !disabled && isFocused && (isEmpty && isMergeExpression || isPartial);
+  const isWithinPlaceholder = !isEmpty && isMergeExpression
+    && value.length < placeholder.length
+    && placeholder.startsWith(value);
+  const isPartial = !isEmpty && !disabled && /^[\w$]+$/.test(value);
+  const showTabHint = !disabled && isFocused && (
+    (isEmpty && isMergeExpression) || isWithinPlaceholder || isPartial
+  );
 
   function handleKeyDown(e) {
     if (e.key !== 'Tab' || e.shiftKey || disabled) return;
-    if (isEmpty && isMergeExpression) {
+    if ((isEmpty && isMergeExpression) || isWithinPlaceholder) {
       e.preventDefault();
       onChange(placeholder);
       return;
@@ -354,12 +359,17 @@ function FlatInput({ id, label, value, disabled, placeholder, onChange }) {
   const [isFocused, setIsFocused] = useState(false);
   const isMergeExpression = placeholder?.startsWith('{!') ?? false;
   const isEmpty = !value;
-  const isPartial = isFocused && !disabled && value && !value.startsWith('{!');
-  const showTabHint = !disabled && isFocused && (isEmpty && isMergeExpression || isPartial);
+  const isWithinPlaceholder = !isEmpty && isMergeExpression
+    && value.length < placeholder.length
+    && placeholder.startsWith(value);
+  const isPartial = !isEmpty && !disabled && /^[\w$]+$/.test(value);
+  const showTabHint = !disabled && isFocused && (
+    (isEmpty && isMergeExpression) || isWithinPlaceholder || isPartial
+  );
 
   function handleKeyDown(e) {
     if (e.key !== 'Tab' || e.shiftKey || disabled) return;
-    if (isEmpty && isMergeExpression) {
+    if ((isEmpty && isMergeExpression) || isWithinPlaceholder) {
       e.preventDefault();
       onChange(placeholder);
       return;

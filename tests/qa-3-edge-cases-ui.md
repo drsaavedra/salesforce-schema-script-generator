@@ -130,25 +130,31 @@ Replacement uses `() => value` (not `value` directly) in `ScriptOutput.jsx` `gra
 Trace `handleReset()` in `App.jsx` lines 101–109.  
 **Expected:** `setCustomVariations([])` is called — wipes all variation entries including their names. After Reset, the Variation Attributes panel shows zero rows. **Note:** This differs from vanilla behavior (which preserved names but cleared expressions). In React, Reset is a hard reset of all Step 2 state.
 
-### TC3-29 — Tab-to-fill: Tree view input (empty and partial)
+### TC3-29 — Tab-to-fill: Tree view input (empty, within-placeholder, and partial)
 `TreeInput` component in `MappingEditor.jsx`.  
-**Expected — two trigger paths:**
+**Expected — three trigger paths:**
 
 **Path 1 (empty → fill placeholder):** Input is empty AND placeholder starts with `{!` AND input is focused → hint shows "Tab ↹ to fill". Tab calls `onChange(placeholder)` (e.g. `{!Record.Name}`).
 
-**Path 2 (partial → wrap):** Input has a value that does NOT start with `{!` (e.g. `Color__c`) AND input is focused → hint shows "Tab ↹ to fill". Tab calls `onChange('{!Record.' + apiName + '}')` where `apiName = value.replace(/^Record\./, '')` to strip an accidental `Record.` prefix. Result: `{!Record.Color__c}`. Once the value starts with `{!`, `isPartial` is false and Tab behaves normally (no interception). Shift+Tab always behaves normally.
+**Path 2 (within placeholder → fill placeholder):** Input value is a non-empty prefix of the placeholder (e.g. user typed `{`, `{!`, `{!R`, `{!Record.`) AND input is focused → `isWithinPlaceholder` is true (`placeholder.startsWith(value) && value.length < placeholder.length`) → hint shows. Tab calls `onChange(placeholder)`. This handles progressive `{` typing that should complete to the placeholder, while guarding against `}` (not a prefix of any `{!...}` placeholder) which gets no hint.
 
-### TC3-30 — Tab-to-fill: Flat form view input (empty and partial)
+**Path 3 (bare API name → wrap):** Input contains only word characters and `$` (matched by `/^[\w$]+$/`, e.g. `Color__c`, `StockKeepingUnit`) AND input is focused → `isPartial` is true → hint shows. Tab calls `onChange('{!Record.' + apiName + '}')` where `apiName = value.replace(/^Record\./, '')`. Result: `{!Record.Color__c}`. Characters like `{`, `}`, `!`, `.`, spaces fail the regex and get no hint.
+
+**Guards:** Once value starts with `{!`, both `isWithinPlaceholder` (placeholder already starts with the expression, so `value.length < placeholder.length` may still pass but `value` does not match the regex) and `isPartial` (value contains `{!`, failing `/^[\w$]+$/`) are false — Tab behaves normally. Shift+Tab always behaves normally.
+
+### TC3-30 — Tab-to-fill: Flat form view input (empty, within-placeholder, and partial)
 `FlatInput` component in `MappingEditor.jsx`.  
-**Expected:** Identical two-path behavior to TC3-29 — same `isPartial` guard, same `Record.` prefix strip, same hint display. The Tab-to-fill logic is intentionally duplicated in `TreeInput`, `FlatInput`, and `VariationAttrsPanel` (a `useTabFill` hook extraction is deferred).
+**Expected:** Identical three-path behavior to TC3-29 — same `isWithinPlaceholder` prefix guard, same `isPartial` identifier regex, same `Record.` prefix strip, same hint display. The Tab-to-fill logic is intentionally duplicated in `TreeInput`, `FlatInput`, and `VariationAttrsPanel` (a `useTabFill` hook extraction is deferred).
 
-### TC3-31 — Tab-to-fill: Variation Attributes panel expression input (empty and partial)
+### TC3-31 — Tab-to-fill: Variation Attributes panel expression input (empty, within-placeholder, and partial)
 `VariationAttrsPanel.jsx` (inside the `entries.map()` callback).  
-**Expected — two trigger paths:**
+**Expected — three trigger paths:**
 
 **Path 1 (empty):** Expression is empty AND focused → hint shows. Tab fills with `exprPlaceholder` (`{!Record.ProductAttributes.FieldName__c}` or name-based variant).
 
-**Path 2 (partial):** Expression has a value that does NOT start with `{!` (e.g. `Angle__c`) AND focused → hint shows. Tab wraps to `{!Record.ProductAttributes.${apiName}}` where `apiName = expression.replace(/^Record\./, '')`. Result: `{!Record.ProductAttributes.Angle__c}`. The `ProductAttributes` relationship is hardcoded here (unlike Tree/Flat) because all variation attributes are bound to the `ProductAttributes` relationship field — they are never top-level product fields.
+**Path 2 (within placeholder):** Expression is a non-empty prefix of `exprPlaceholder` (e.g. user typed `{`, `{!R`) → `isWithinPlaceholder` is true → hint shows. Tab fills with `exprPlaceholder`. This prevents `{` from being wrapped as `{!Record.ProductAttributes.{}`.
+
+**Path 3 (bare API name → wrap):** Expression matches `/^[\w$]+$/` (e.g. `Angle__c`) AND focused → hint shows. Tab wraps to `{!Record.ProductAttributes.${apiName}}` where `apiName = expression.replace(/^Record\./, '')`. Result: `{!Record.ProductAttributes.Angle__c}`. The `ProductAttributes` relationship is hardcoded here (unlike Tree/Flat) because all variation attributes are bound to the `ProductAttributes` relationship field — they are never top-level product fields.
 
 ### TC3-32 — Variation Attributes card visual contract
 Trace `src/styles.css` rules for `.variation-attrs-panel` and `.variation-attrs-heading`.  

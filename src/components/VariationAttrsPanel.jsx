@@ -52,12 +52,16 @@ export default function VariationAttrsPanel({ entries, onEntriesChange }) {
         {entries.map(entry => {
           const exprPlaceholder = `{!Record.ProductAttributes.${entry.name || 'FieldName'}__c}`;
           const isFocused = focusedExprId === entry.id;
-          const isPartial = isFocused && entry.expression && !entry.expression.startsWith('{!');
-          const showTabHint = isFocused && (!entry.expression || isPartial);
+          const isEmpty = !entry.expression;
+          const isWithinPlaceholder = !isEmpty
+            && entry.expression.length < exprPlaceholder.length
+            && exprPlaceholder.startsWith(entry.expression);
+          const isPartial = !isEmpty && /^[\w$]+$/.test(entry.expression);
+          const showTabHint = isFocused && (isEmpty || isWithinPlaceholder || isPartial);
 
           function handleExprKeyDown(e) {
             if (e.key !== 'Tab' || e.shiftKey) return;
-            if (!entry.expression) {
+            if (isEmpty || isWithinPlaceholder) {
               e.preventDefault();
               handleExpressionChange(entry.id, exprPlaceholder);
               return;
