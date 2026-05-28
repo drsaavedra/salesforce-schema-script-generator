@@ -51,13 +51,22 @@ export default function VariationAttrsPanel({ entries, onEntriesChange }) {
       <div className="custom-variation-list">
         {entries.map(entry => {
           const exprPlaceholder = `{!Record.ProductAttributes.${entry.name || 'FieldName'}__c}`;
-          const showTabHint = focusedExprId === entry.id && !entry.expression;
+          const isFocused = focusedExprId === entry.id;
+          const isPartial = isFocused && entry.expression && !entry.expression.startsWith('{!');
+          const showTabHint = isFocused && (!entry.expression || isPartial);
 
           function handleExprKeyDown(e) {
             if (e.key !== 'Tab' || e.shiftKey) return;
-            if (entry.expression) return;
-            e.preventDefault();
-            handleExpressionChange(entry.id, exprPlaceholder);
+            if (!entry.expression) {
+              e.preventDefault();
+              handleExpressionChange(entry.id, exprPlaceholder);
+              return;
+            }
+            if (isPartial) {
+              e.preventDefault();
+              const apiName = entry.expression.replace(/^Record\./, '');
+              handleExpressionChange(entry.id, `{!Record.ProductAttributes.${apiName}}`);
+            }
           }
 
           return (

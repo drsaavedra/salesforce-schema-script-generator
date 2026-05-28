@@ -19,13 +19,21 @@ function TreeInput({ id, value, disabled, onChange, placeholder }) {
   const [isFocused, setIsFocused] = useState(false);
   const isMergeExpression = placeholder?.startsWith('{!') ?? false;
   const isEmpty = !value;
-  const showTabHint = isFocused && isEmpty && isMergeExpression && !disabled;
+  const isPartial = isFocused && !disabled && value && !value.startsWith('{!');
+  const showTabHint = !disabled && isFocused && (isEmpty && isMergeExpression || isPartial);
 
   function handleKeyDown(e) {
-    if (e.key !== 'Tab' || e.shiftKey) return;
-    if (!isEmpty || !isMergeExpression || disabled) return;
-    e.preventDefault();
-    onChange(placeholder);
+    if (e.key !== 'Tab' || e.shiftKey || disabled) return;
+    if (isEmpty && isMergeExpression) {
+      e.preventDefault();
+      onChange(placeholder);
+      return;
+    }
+    if (isPartial) {
+      e.preventDefault();
+      const apiName = value.replace(/^Record\./, '');
+      onChange(`{!Record.${apiName}}`);
+    }
   }
 
   return (
@@ -346,13 +354,21 @@ function FlatInput({ id, label, value, disabled, placeholder, onChange }) {
   const [isFocused, setIsFocused] = useState(false);
   const isMergeExpression = placeholder?.startsWith('{!') ?? false;
   const isEmpty = !value;
-  const showTabHint = isFocused && isEmpty && isMergeExpression && !disabled;
+  const isPartial = isFocused && !disabled && value && !value.startsWith('{!');
+  const showTabHint = !disabled && isFocused && (isEmpty && isMergeExpression || isPartial);
 
   function handleKeyDown(e) {
-    if (e.key !== 'Tab' || e.shiftKey) return;
-    if (!isEmpty || !isMergeExpression || disabled) return;
-    e.preventDefault();
-    onChange(placeholder);
+    if (e.key !== 'Tab' || e.shiftKey || disabled) return;
+    if (isEmpty && isMergeExpression) {
+      e.preventDefault();
+      onChange(placeholder);
+      return;
+    }
+    if (isPartial) {
+      e.preventDefault();
+      const apiName = value.replace(/^Record\./, '');
+      onChange(`{!Record.${apiName}}`);
+    }
   }
 
   return (

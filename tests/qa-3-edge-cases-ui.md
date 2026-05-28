@@ -130,17 +130,25 @@ Replacement uses `() => value` (not `value` directly) in `ScriptOutput.jsx` `gra
 Trace `handleReset()` in `App.jsx` lines 101–109.  
 **Expected:** `setCustomVariations([])` is called — wipes all variation entries including their names. After Reset, the Variation Attributes panel shows zero rows. **Note:** This differs from vanilla behavior (which preserved names but cleared expressions). In React, Reset is a hard reset of all Step 2 state.
 
-### TC3-29 — Tab-to-fill: Tree view input
-`TreeInput` component in `MappingEditor.jsx` lines 18–50.  
-**Expected:** When an input is empty (`isEmpty = !value`) AND the placeholder starts with `{!` (`isMergeExpression`) AND the input is focused (`isFocused`), the `.tab-fill-hint` span shows "Tab ↹ to fill". When the user presses Tab (without Shift), `handleKeyDown` calls `e.preventDefault()` and `onChange(placeholder)` — input is filled with the placeholder text, focus remains in the input (default Tab navigation was suppressed). Once the input has a value, `isEmpty` becomes false and the hint disappears. Shift+Tab behaves normally (no interception).
+### TC3-29 — Tab-to-fill: Tree view input (empty and partial)
+`TreeInput` component in `MappingEditor.jsx`.  
+**Expected — two trigger paths:**
 
-### TC3-30 — Tab-to-fill: Flat form view input
-`FlatInput` component in `MappingEditor.jsx` lines 345–379.  
-**Expected:** Identical behavior to TreeInput (TC3-29) — same conditions (`isEmpty`, `isMergeExpression`, `isFocused`), same hint text, same Tab interception. Note: the Tab-to-fill logic is intentionally duplicated in `TreeInput`, `FlatInput`, and `VariationAttrsPanel` — a `useTabFill` hook extraction is a deferred refactor.
+**Path 1 (empty → fill placeholder):** Input is empty AND placeholder starts with `{!` AND input is focused → hint shows "Tab ↹ to fill". Tab calls `onChange(placeholder)` (e.g. `{!Record.Name}`).
 
-### TC3-31 — Tab-to-fill: Variation Attributes panel expression input
-`VariationAttrsPanel.jsx` lines 54–60 (inside the `entries.map()` callback).  
-**Expected:** The expression input follows the same Tab-to-fill pattern. The placeholder is the dynamically computed `exprPlaceholder` (based on `entry.name`). On Tab, `handleExprKeyDown` calls `e.preventDefault()` and fills the expression with `exprPlaceholder`. `showTabHint` is true when `focusedExprId === entry.id` AND `!entry.expression`.
+**Path 2 (partial → wrap):** Input has a value that does NOT start with `{!` (e.g. `Color__c`) AND input is focused → hint shows "Tab ↹ to fill". Tab calls `onChange('{!Record.' + apiName + '}')` where `apiName = value.replace(/^Record\./, '')` to strip an accidental `Record.` prefix. Result: `{!Record.Color__c}`. Once the value starts with `{!`, `isPartial` is false and Tab behaves normally (no interception). Shift+Tab always behaves normally.
+
+### TC3-30 — Tab-to-fill: Flat form view input (empty and partial)
+`FlatInput` component in `MappingEditor.jsx`.  
+**Expected:** Identical two-path behavior to TC3-29 — same `isPartial` guard, same `Record.` prefix strip, same hint display. The Tab-to-fill logic is intentionally duplicated in `TreeInput`, `FlatInput`, and `VariationAttrsPanel` (a `useTabFill` hook extraction is deferred).
+
+### TC3-31 — Tab-to-fill: Variation Attributes panel expression input (empty and partial)
+`VariationAttrsPanel.jsx` (inside the `entries.map()` callback).  
+**Expected — two trigger paths:**
+
+**Path 1 (empty):** Expression is empty AND focused → hint shows. Tab fills with `exprPlaceholder` (`{!Record.ProductAttributes.FieldName__c}` or name-based variant).
+
+**Path 2 (partial):** Expression has a value that does NOT start with `{!` (e.g. `Angle__c`) AND focused → hint shows. Tab wraps to `{!Record.ProductAttributes.${apiName}}` where `apiName = expression.replace(/^Record\./, '')`. Result: `{!Record.ProductAttributes.Angle__c}`. The `ProductAttributes` relationship is hardcoded here (unlike Tree/Flat) because all variation attributes are bound to the `ProductAttributes` relationship field — they are never top-level product fields.
 
 ### TC3-32 — Variation Attributes card visual contract
 Trace `src/styles.css` rules for `.variation-attrs-panel` and `.variation-attrs-heading`.  
