@@ -626,7 +626,7 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
         // ── Flat form view (mobile ≤640px) ──
         <div className="mapping-form">
           <p className="mapping-banner">
-            Enter a Salesforce merge field like <code>{'{!Record.Name}'}</code>, or a static value for any field.
+            Enter a Salesforce merge field like <code>{'{!Record.Name}'}</code>, or a static value for any field. Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.
           </p>
           {selected.map(field => {
             const mapping = mappings[field.id] || {};
@@ -659,7 +659,7 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
         // ── Tree view (desktop ≥641px) ──
         <div className="mapping-form">
           <p className="mapping-banner">
-            Bind each property to a Salesforce merge expression — e.g. {'{!Record.FieldApiName}'} — or a static value.
+            Bind each property to a Salesforce merge expression — e.g. {'{!Record.FieldApiName}'} — or a static value. Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.
           </p>
           <div className="tree-mapping-editor">
             <div className="tree-node">

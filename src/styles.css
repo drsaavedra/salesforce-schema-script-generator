@@ -440,7 +440,6 @@ h2 {
   font-size: 12px;
   line-height: 1.5;
   margin-bottom: 10px;
-  max-width: 520px;
   padding: 10px 12px;
 }
 
@@ -504,6 +503,17 @@ h2 {
   color: var(--accent-strong);
   font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
   font-size: 12px;
+  padding: 1px 5px;
+}
+
+kbd {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
   padding: 1px 5px;
 }
 
