@@ -81,6 +81,8 @@ export default function App() {
   function handleClearAll() {
     setSelectedFields(new Set());
     setMappings({});
+    setCustomVariations([]);
+    setIncludeBreadcrumbList(false);
   }
 
   function handleRecommended() {

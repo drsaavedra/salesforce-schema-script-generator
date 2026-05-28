@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 export default function VariationAttrsPanel({ entries, onEntriesChange }) {
   const [focusedExprId, setFocusedExprId] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   function handleAdd() {
     onEntriesChange([...entries, { id: crypto.randomUUID(), name: '', expression: '' }]);
@@ -23,19 +24,27 @@ export default function VariationAttrsPanel({ entries, onEntriesChange }) {
     <div className="variation-attrs-panel">
       <div className="variation-attrs-card-header">
         <h4 className="variation-attrs-heading">Custom variation attributes</h4>
-        <details className="variation-attrs-info">
-          <summary aria-label="Show schema.org guidance">?</summary>
-          <div className="variation-attrs-info-body">
-            <p>
-              <strong>Note:</strong> schema.org recommends that well-known attributes —
-              such as <code>color</code>, <code>width</code>, <code>material</code>,
-              or <code>gtin13</code> — be mapped to their dedicated schema.org properties
-              instead of this generic mechanism, since structured-data consumers expect
-              to find those values at their specific property paths.
-            </p>
-          </div>
-        </details>
+        <button
+          type="button"
+          className="variation-attrs-info-trigger"
+          aria-expanded={showInfo}
+          aria-label="Show schema.org guidance"
+          onClick={() => setShowInfo(s => !s)}
+        >
+          ?
+        </button>
       </div>
+      {showInfo && (
+        <div className="variation-attrs-info-body">
+          <p>
+            <strong>Note:</strong> schema.org recommends that well-known attributes —
+            such as <code>color</code>, <code>width</code>, <code>material</code>,
+            or <code>gtin13</code> — be mapped to their dedicated schema.org properties
+            instead of this generic mechanism, since structured-data consumers expect
+            to find those values at their specific property paths.
+          </p>
+        </div>
+      )}
       <p className="variation-attrs-hint">
         For proprietary fields with no dedicated schema.org property — each row outputs as an <code>additionalProperty / PropertyValue</code> node bound to a <code>ProductAttributes</code> field.
       </p>

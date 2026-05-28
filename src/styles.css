@@ -406,12 +406,9 @@ h2 {
   text-transform: none;
 }
 
-.variation-attrs-info {
-  display: inline-block;
-}
-
-.variation-attrs-info summary {
+.variation-attrs-info-trigger {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: none;
   border-radius: 50%;
   color: var(--accent-strong);
   cursor: pointer;
@@ -419,19 +416,18 @@ h2 {
   font-weight: 700;
   height: 16px;
   line-height: 16px;
-  list-style: none;
+  min-height: auto;
+  padding: 0;
   text-align: center;
   width: 16px;
 }
 
-.variation-attrs-info summary::-webkit-details-marker { display: none; }
-.variation-attrs-info summary::marker { content: ''; }
-
-.variation-attrs-info summary:hover {
+.variation-attrs-info-trigger:hover {
   background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: transparent;
 }
 
-.variation-attrs-info summary:focus-visible {
+.variation-attrs-info-trigger:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--focus) 50%, transparent);
   outline-offset: 2px;
 }
@@ -443,7 +439,8 @@ h2 {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
-  margin-top: 8px;
+  margin-bottom: 10px;
+  max-width: 520px;
   padding: 10px 12px;
 }
 
