@@ -1030,6 +1030,20 @@ h2 {
   .schema-toolbar {
     justify-content: center;
   }
+
+  /* Variation panel: extend tap areas to ≥44px without changing visual size */
+  .variation-attrs-info-trigger {
+    position: relative;
+  }
+  .variation-attrs-info-trigger::after {
+    content: '';
+    inset: -14px;
+    position: absolute;
+  }
+  .custom-variation-row .btn-remove {
+    min-height: 44px;
+    padding: 0 8px;
+  }
 }
 
 @media (max-width: 360px) {

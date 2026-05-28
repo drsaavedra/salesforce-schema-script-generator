@@ -139,4 +139,15 @@ Same reasoning as TC4-31 — the panel is always a sibling to `MappingEditor` in
 
 ### TC4-33 — Variation Attributes card responsive on mobile
 Verify `src/styles.css` rules for `.variation-attrs-panel` and its child elements inside `@media (max-width: 640px)` blocks.  
-**Expected:** At viewport ≤640px: `.variation-attrs-panel` retains its `18px 20px` padding and `8px` border-radius without horizontal overflow. The `.variation-attrs-info-body` wraps text correctly within the card width. The `.variation-attrs-card-header` flex row keeps the `?` button inline with the heading (no wrap). The "+ Add variation attribute" and "Remove" buttons are tappable (minimum touch target size).
+**Expected:** At viewport ≤640px:
+- `.variation-attrs-panel` retains its `18px 20px` padding and `8px` border-radius without horizontal overflow (inherits container width from the wizard).
+- `.variation-attrs-info-body` wraps text correctly (`max-width: 520px` has no effect at narrow widths; natural wrapping applies).
+- `.variation-attrs-card-header` flex row keeps the `?` button inline with the heading.
+- **Touch targets:** The `?` info button (16×16px visually) has a `::after` pseudo-element extending its tap area to 44×44px via `inset: -14px` (inside the `@media (max-width: 640px)` block). The `.custom-variation-row .btn-remove` button has `min-height: 44px` on mobile (overrides the base `min-height: auto`). The "+ Add variation attribute" button inherits the base button `min-height: 38px` and is acceptable.
+
+Verify these specific rules exist in the `@media (max-width: 640px)` block:
+```css
+.variation-attrs-info-trigger { position: relative; }
+.variation-attrs-info-trigger::after { content: ''; inset: -14px; position: absolute; }
+.custom-variation-row .btn-remove { min-height: 44px; padding: 0 8px; }
+```
