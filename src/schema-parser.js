@@ -24,7 +24,7 @@ const FIELD_OVERRIDES = {
   brand:              { path: "brand.name",                                              defaultSelected: false, valueType: "brand" },
   offers:             {                                                                  defaultSelected: true,  valueType: "offer" },
   additionalProperty: {                                                                  defaultSelected: false, valueType: "propertyValue" },
-  category:           { defaultExpression: "{!Record.ProductCategory.Name}",                                    valueType: "expression" },
+  category:           { defaultExpression: "{!Record.ProductCategory.Name}",            defaultSelected: true,  valueType: "expression" },
   manufacturer:       { path: "manufacturer.name",                                                              valueType: "organization" },
 
   // Non-obvious type hints (validator will reject wrong types)
@@ -43,7 +43,7 @@ const FIELD_OVERRIDES = {
 
 // Fields shown first in Step 1 tile grid, in order, per schema type.
 const RECOMMENDED_ORDER = {
-  Product: ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
+  Product: ["name", "description", "image", "sku", "productID", "offers", "category", "brand", "additionalProperty"],
 };
 
 // Fields excluded because they cannot be expressed as a Salesforce merge field

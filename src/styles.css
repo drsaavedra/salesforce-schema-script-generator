@@ -384,24 +384,75 @@ h2 {
 
 /* ── Variation attributes panel (Step 2 — Bindings) ── */
 .variation-attrs-panel {
-  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  border-radius: 8px;
   margin-top: 24px;
-  padding-top: 20px;
+  padding: 18px 20px;
+}
+
+.variation-attrs-card-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .variation-attrs-heading {
-  color: var(--accent-strong);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  margin: 0 0 10px;
-  text-transform: uppercase;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: normal;
+  margin: 0;
+  text-transform: none;
 }
+
+.variation-attrs-info {
+  display: inline-block;
+}
+
+.variation-attrs-info summary {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 50%;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  height: 16px;
+  line-height: 16px;
+  list-style: none;
+  text-align: center;
+  width: 16px;
+}
+
+.variation-attrs-info summary::-webkit-details-marker { display: none; }
+.variation-attrs-info summary::marker { content: ''; }
+
+.variation-attrs-info summary:hover {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.variation-attrs-info summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.variation-attrs-info-body {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 8px;
+  padding: 10px 12px;
+}
+
+.variation-attrs-info-body p { margin: 0; }
 
 .variation-attrs-hint {
   color: var(--muted);
   font-size: 13px;
-  margin-bottom: 14px;
+  margin: 0 0 14px;
 }
 
 .custom-variation-list {
@@ -427,6 +478,15 @@ h2 {
   flex: 1;
   font-family: var(--mono);
   font-size: 13px;
+}
+
+.custom-variation-row .input-with-hint {
+  flex: 1;
+}
+
+.tree-row .input-with-hint {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Mapping banner ── */
@@ -979,4 +1039,19 @@ h2 {
   .field-tiles {
     grid-template-columns: 1fr;
   }
+}
+
+/* Tab-to-fill hint shown next to empty merge-expression inputs */
+.input-with-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-fill-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
 }

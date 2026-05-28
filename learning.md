@@ -601,3 +601,791 @@ Note the contrast with journal entry #1 ("Static Site over LWC"): for Product sc
 ---
 
 *This journal is updated as significant decisions are made or concepts are understood. Not every line of code needs to be documented — only the choices where the "why" isn't obvious from the code itself.*
+
+---
+
+---
+
+---
+
+## React Migration — From Vanilla JS to React + Vite
+
+**Session date:** 2026-05-25 → 2026-05-26
+
+The same tool was rewritten in React + Vite as a learning exercise. The goal was to understand how LWC patterns map to React — because React and LWC share the same reactive, declarative model. Seeing the same concepts in two frameworks is the fastest way to understand what is framework-agnostic and what is specific to each.
+
+---
+
+### Why Migrate to React (as a Learning Exercise)
+
+The vanilla JS version has an imperative rendering model: every time state changes, a function like `renderMappings()` manually destroys and rebuilds DOM nodes. This works, but it forces you to manage *when* to update, *what* to update, and *how much* to rebuild.
+
+React and LWC both flip this model: you **describe what the UI looks like given current state**, and the framework figures out the minimum DOM changes needed. The migration makes this contrast visible — every `renderXxx()` call in vanilla JS has a direct React equivalent.
+
+---
+
+### LWC ↔ React Pattern Reference
+
+| LWC | React | Notes |
+|---|---|---|
+| `@track name = ""` | `const [name, setName] = useState("")` | Both create reactive state; calling the setter schedules a re-render |
+| `@api value` | `function Comp({ value }) { ... }` | Props arrive as function arguments in React |
+| `this.value = x` | `setValue(x)` | Calling the setter is what triggers the re-render |
+| `connectedCallback()` | `useEffect(() => { }, [])` | Empty dep array = run once on mount |
+| `renderedCallback()` | `useEffect(() => { })` | No dep array = run after every render |
+| `@api set value(v) { doSomething() }` | `useEffect(() => { doSomething() }, [value])` | Dep array watches specific values, same as a reactive setter |
+| `disconnectedCallback()` | cleanup `return` inside `useEffect` | `return () => removeListener()` runs on unmount or before next effect |
+| `<template if:true={show}>` | `{show && <Component />}` | Short-circuit conditional rendering |
+| `<template for:each={items} for:item="i">` | `{items.map(i => <Item key={i.id} />)}` | `key` in React = `key:` directive in LWC |
+| `dispatchEvent(new CustomEvent('select', { detail: val }))` | call prop: `onSelect(val)` | LWC bubbles events; React passes callbacks as props |
+| Component-scoped `.css` | `import './styles.css'` | This project uses one global `styles.css` |
+| `template.querySelector('.foo')` | `useRef()` + `ref={myRef}` | Direct DOM access when you need it |
+
+---
+
+### The Fundamental Mental Model
+
+Both React and LWC follow the same one-way data flow:
+
+```
+State (owned at top level)
+  │
+  │  props flow DOWN
+  ▼
+Child components
+  │
+  │  callbacks / events flow UP
+  ▼
+Parent updates state → re-renders triggered automatically
+```
+
+**LWC example:**
+```js
+// Child fires a CustomEvent
+this.dispatchEvent(new CustomEvent('select', { detail: field }));
+
+// Parent listens
+<c-field-list onselect={handleSelect} />
+```
+
+**React equivalent:**
+```jsx
+// Child calls the prop function directly
+onToggleField(field);
+
+// Parent passes the handler as a prop
+<FieldList onToggleField={handleToggleField} />
+```
+
+No global event bus. No shared mutable object. All state changes go through the parent's setter functions. This is identical in both frameworks.
+
+---
+
+### State Architecture: App-Level vs. Component-Level
+
+**Rule:** State belongs at the lowest common ancestor of all components that need it.
+
+```
+App.jsx
+  ├── selectedFields   ← needed by FieldList AND ScriptOutput → lives in App
+  ├── mappings         ← needed by MappingEditor AND ScriptOutput → lives in App
+  └── customVariations ← needed by VariationAttrsPanel AND ScriptOutput → lives in App
+
+FieldList.jsx
+  └── searchQuery      ← only FieldList uses it → lives in FieldList
+
+MappingEditor.jsx
+  └── isMobile         ← only MappingEditor uses it → lives in MappingEditor
+  └── closedMappings   ← only MappingEditor uses it → lives in MappingEditor
+
+ScriptOutput.jsx
+  └── copyStatus       ← only ScriptOutput uses it → lives in ScriptOutput
+```
+
+Keeping local state local avoids unnecessary re-renders of sibling components.
+
+---
+
+### Immutability — React Only Re-Renders on New References
+
+React detects state changes by comparing **object references**, not values. If you mutate the existing object, array, or Set, React sees the same reference and skips the re-render.
+
+**Wrong (mutates in place — React won't re-render):**
+```js
+selectedFields.add(field.id);     // ❌ same Set reference
+setSelectedFields(selectedFields);
+```
+
+**Right (new reference on every update):**
+```js
+setSelectedFields(prev => {
+  const next = new Set(prev);     // ✅ brand new Set
+  next.add(field.id);
+  return next;
+});
+```
+
+Same rule for objects (mappings):
+```js
+// ❌ Mutating in place — won't re-render
+mappings[fieldId].expression = value;
+
+// ✅ Spread creates a new object
+setMappings(prev => ({
+  ...prev,
+  [fieldId]: { ...prev[fieldId], expression: value },
+}));
+```
+
+This is the biggest adjustment coming from vanilla JS, where mutating objects is normal.
+
+---
+
+### The Functional Updater Pattern — Avoiding Stale Closures
+
+When reading one state variable inside another's setter, you can accidentally read a **stale snapshot** from the last render. This is a "stale closure."
+
+```js
+// ❌ Bug: 'mappings' captured at render time, may not reflect latest state
+setSelectedFields(prev => {
+  const next = new Set(prev);
+  next.delete(field.id);
+  setMappings({ ...mappings });   // 'mappings' might be outdated
+  return next;
+});
+
+// ✅ Fix: move the second setState outside the updater
+setSelectedFields(prev => {
+  const next = new Set(prev);
+  next.delete(field.id);
+  return next;
+});
+setMappings(prev => ({ ...prev })); // reads fresh state via its own updater
+```
+
+React batches both `setState` calls from the same event handler into one re-render — no performance penalty.
+
+---
+
+### `useEffect` — Three Patterns Used in This Migration
+
+**1. Run once on mount (= LWC `connectedCallback`):**
+```jsx
+useEffect(() => {
+  loadSchemaFields('Product').then(({ fields, error }) => {
+    setFields(fields);
+    setSchemaError(error);
+    setSchemaLoading(false);
+  });
+}, []); // empty dep array = mount only
+```
+
+**2. React to a prop change (= LWC reactive setter):**
+```jsx
+useEffect(() => {
+  document.querySelector('.app-header').inert = isOpen;
+  return () => { document.querySelector('.app-header').inert = false; };
+}, [isOpen]); // runs whenever isOpen changes
+```
+
+**3. Event listener with cleanup (= `connectedCallback` + `disconnectedCallback`):**
+```jsx
+useEffect(() => {
+  const handler = e => { if (e.key === 'Escape') onClose(); };
+  document.addEventListener('keydown', handler);
+  return () => document.removeEventListener('keydown', handler); // ← cleanup
+}, [isOpen, onClose]);
+```
+
+The `return () => ...` cleanup is equivalent to LWC's `disconnectedCallback()`. Without cleanup, each render adds another listener — they stack.
+
+---
+
+### List Keys — Use Stable IDs, Not Array Index
+
+React uses `key` to track which list item maps to which DOM node across re-renders. When items can be removed or reordered, array index breaks this — item 0 after a deletion is a different item than item 0 before.
+
+```jsx
+// ❌ Index shifts when you remove item 0
+entries.map((e, i) => <Row key={i} />)
+
+// ✅ Stable ID survives reordering and removal
+entries.map(e => <Row key={e.id} />)
+```
+
+Assign the ID at creation time, not during render:
+```js
+function handleAdd() {
+  onEntriesChange([
+    ...entries,
+    { id: crypto.randomUUID(), name: '', expression: '' },
+  ]);
+}
+```
+
+**LWC connection:** LWC's `key:` directive in `for:each` is the same concept for the same reason.
+
+---
+
+### Fully Controlled Components — No Internal State
+
+A "controlled" component holds no state. Its displayed value comes entirely from props, and every user interaction is reported back via a callback. The parent is the single source of truth.
+
+```jsx
+// Controlled input — value always reflects props, never holds its own state
+<input
+  value={entry.name}
+  onChange={e => handleNameChange(entry.id, e.target.value)}
+/>
+```
+
+`VariationAttrsPanel` is fully controlled — it receives `entries` as a prop and calls `onEntriesChange` with a new array on every change. It owns zero state.
+
+For a read-only textarea, React still requires a handler when `value` is set:
+```jsx
+<textarea
+  value={scriptText}
+  readOnly
+  onChange={() => {}}   // React requires onChange when value prop is provided
+/>
+```
+
+---
+
+### Refs — Direct DOM Access When You Need It
+
+For rare cases where you must touch the DOM directly (focus management, reading dimensions), `useRef` gives you a stable handle to a DOM node.
+
+```jsx
+const closeButtonRef = useRef(null);
+
+// Attach to the DOM node
+<button ref={closeButtonRef}>Close</button>
+
+// Use it inside an effect
+useEffect(() => {
+  if (isOpen) closeButtonRef.current.focus();
+}, [isOpen]);
+```
+
+**LWC equivalent:** `this.template.querySelector('.close-btn').focus()`
+
+Refs don't trigger re-renders — they're for imperative side effects only, not for driving UI.
+
+---
+
+### Viewport Detection — matchMedia + useEffect
+
+```jsx
+const [isMobile, setIsMobile] = useState(
+  () => window.matchMedia('(max-width: 640px)').matches  // lazy initializer
+);
+
+useEffect(() => {
+  const mq = window.matchMedia('(max-width: 640px)');
+  const handler = e => setIsMobile(e.matches);
+  mq.addEventListener('change', handler);
+  return () => mq.removeEventListener('change', handler); // cleanup on unmount
+}, []);
+```
+
+The `() =>` in `useState(() => ...)` is a **lazy initializer** — the function runs once on mount to get the initial value, instead of re-evaluating `window.matchMedia(...)` on every render. Without the cleanup return, each re-render of `MappingEditor` would attach another listener.
+
+---
+
+### Vite-Specific: Why `base` and `import.meta.env.BASE_URL` Matter
+
+The tool is deployed to a GitHub Pages subdirectory: `drsaavedra.github.io/salesforce-schema-script-generator/`. Without the `base` setting, Vite generates asset URLs as `/assets/index.js` (broken — resolves to the root) instead of `/salesforce-schema-script-generator/assets/index.js` (correct).
+
+```js
+// vite.config.js
+export default defineConfig({
+  base: '/salesforce-schema-script-generator/',  // ← critical for subdirectory deploy
+  build: { outDir: 'docs', emptyOutDir: true },
+});
+```
+
+Inside code, use `import.meta.env.BASE_URL` to build asset paths:
+```js
+// ❌ Resolves to / in production → 404
+fetch("data/schema.ttl")
+
+// ✅ Resolves to /salesforce-schema-script-generator/data/schema.ttl
+fetch(import.meta.env.BASE_URL + 'data/schema.ttl')
+```
+
+Vite replaces `import.meta.env.BASE_URL` at build time — it works correctly in both `npm run dev` (uses the base from config) and production.
+
+---
+
+### ES Modules vs. Browser Globals
+
+Vanilla JS files use variables like `const SCHEMA_REGISTRY = ...` as **browser globals** — they're visible everywhere because they share the `window` scope.
+
+Vite treats every file as an **ES module**. Variables are file-scoped by default — invisible outside the file unless explicitly exported.
+
+```js
+// ❌ File-scoped in Vite — not importable by other modules
+const DEFAULT_OFFER = { ... };
+
+// ✅ Exported — importable by other modules
+export const DEFAULT_OFFER = { ... };
+```
+
+Every `import` statement at the top of a `.jsx` file is the explicit, auditable equivalent of the implicit browser-global dependency chain of vanilla JS.
+
+---
+
+### Mistakes Made During the Migration and What They Teach
+
+| Mistake | Root cause | Lesson |
+|---|---|---|
+| `useState` import left in `VariationAttrsPanel` | Habit — added it by default | If a component has no internal state, it doesn't need `useState`. Controlled = pure function of props. |
+| `key={idx}` for removable entries | Array index seems convenient | Array index breaks React's item tracking on removal. Use `crypto.randomUUID()` at creation. |
+| Stale closure in `handleToggleField` | Reading `mappings` inside a `setSelectedFields` updater | Never read sibling state variables inside a functional updater — use separate `setState(prev => ...)` calls. |
+| `handleClearAll` not resetting `mappings` | Only cleared `selectedFields` | State that conceptually resets together should reset together. |
+| Error status in copy/download never cleared | `setCopyStatus('error text')` set on error, never cleared | Every `setState` that sets a value needs a matching `setTimeout` to clear it. Cover all paths. |
+| `<div role="button">` missing `e.preventDefault()` | Manual ARIA vs. native element | Native `<button>` handles keyboard (Space, Enter) and accessibility correctly for free. |
+| `fetch("data/schema.ttl")` broken on GitHub Pages | Relative path doesn't account for subdirectory | Always use `import.meta.env.BASE_URL` for asset paths in Vite subdirectory deployments. |
+| `styles.css` wiped by `npm run build` | `emptyOutDir: true` deletes everything in `docs/` | Never store source files in the build output directory. Source files belong in `src/`. |
+| Missing `export` on copied constants and parser | Copied vanilla globals directly into Vite modules | ES module scope is file-local. Add `export` to everything that needs to cross a module boundary. |
+
+---
+
+### Component-Level Pattern Summary
+
+| Component | What it demonstrates |
+|---|---|
+| `App.jsx` | Top-level state ownership; `useEffect` for async data load; distributing state and callbacks to children |
+| `StepsNav.jsx` | Pure presentational component — zero state, output is entirely a function of props |
+| `FieldList.jsx` | Local state (`searchQuery`) colocated with the only component that uses it; derived values computed inline (no `useEffect`) |
+| `MappingEditor.jsx` | `matchMedia` + `useEffect` for viewport detection; deeply nested controlled inputs; immutable entry mutations |
+| `VariationAttrsPanel.jsx` | Fully controlled — no internal state; parent owns the array |
+| `ScriptOutput.jsx` | Business logic in module-scope pure functions; derived values (`scriptText`, `warnings`) computed synchronously — no `useEffect` needed |
+| `SchemaPreviewModal.jsx` | Three separate `useEffect` hooks for three distinct side effects; returns `null` when closed instead of hiding |
+
+---
+
+### The Biggest Conceptual Shift
+
+In vanilla JS, the question you ask is: **"When state changes, what do I need to re-render?"**
+
+In React (and LWC), the question you ask is: **"Given this state, what should the UI look like?"**
+
+The framework answers the second question automatically. Your job is only to keep state correct.
+
+```
+Vanilla JS:  state change → call renderXxx() → manually update DOM
+React/LWC:   state change → framework diffs virtual DOM → updates only what changed
+```
+
+The migration from vanilla JS to React is fundamentally a shift from *imperative* (you manage the how and when) to *declarative* (you describe the what).
+
+---
+
+### Tab-to-Fill Placeholder — LWC ↔ React Parallel
+
+**Feature:** When an input that has a Salesforce merge-expression placeholder (e.g. `{!Record.Name}`) is empty and focused, a subtle hint `Tab ↹ to fill` appears next to it. Pressing Tab populates the input with the placeholder value and keeps focus on the field. A second Tab advances focus normally.
+
+**Scope rule:** Only inputs whose placeholder starts with `{!` get this behavior. Pure hint placeholders like `"Company Name"` or `"e.g. Angle"` are left alone — auto-filling those would put the hint text itself into the field.
+
+---
+
+#### LWC implementation — step by step
+
+In LWC, this becomes its own component (`mergeFieldInput`) because LWC is component-centric. Reactive state uses `@track`; events flow up via `CustomEvent`.
+
+**Step 1: Component file structure**
+```
+mergeFieldInput/
+  mergeFieldInput.html     ← template
+  mergeFieldInput.js       ← controller
+  mergeFieldInput.css      ← scoped styles
+```
+
+**Step 2: Controller — state and derived getters**
+```js
+import { LightningElement, api, track } from 'lwc';
+
+export default class MergeFieldInput extends LightningElement {
+  @api value;           // current value (parent-controlled)
+  @api placeholder;     // the merge expression hint
+  @api fieldId;         // so parent can identify which field changed
+  @track isFocused = false;
+
+  get isMergeExpression() {
+    return this.placeholder && this.placeholder.startsWith('{!');
+  }
+  get isEmpty()     { return !this.value; }
+  get showTabHint() { return this.isFocused && this.isEmpty && this.isMergeExpression; }
+}
+```
+
+**Step 3: Event handlers in the controller**
+```js
+handleFocus() { this.isFocused = true; }
+handleBlur()  { this.isFocused = false; }
+
+handleKeyDown(event) {
+  if (event.key !== 'Tab' || event.shiftKey) return; // not our Tab
+  if (!this.isEmpty || !this.isMergeExpression) return; // nothing to fill
+  event.preventDefault();                              // stop focus advance
+  this.dispatchEvent(new CustomEvent('fill', {
+    detail: { fieldId: this.fieldId, value: this.placeholder },
+  }));
+}
+
+handleChange(event) {
+  this.dispatchEvent(new CustomEvent('change', {
+    detail: { fieldId: this.fieldId, value: event.target.value },
+  }));
+}
+```
+
+**Step 4: Template**
+```html
+<template>
+  <div class="merge-field-input">
+    <input
+      type="text"
+      value={value}
+      placeholder={placeholder}
+      onfocus={handleFocus}
+      onblur={handleBlur}
+      onkeydown={handleKeyDown}
+      oninput={handleChange}
+    />
+    <template if:true={showTabHint}>
+      <span class="tab-hint">Tab ↹ to fill</span>
+    </template>
+  </div>
+</template>
+```
+
+**Step 5: Parent wires up the component**
+```html
+<c-merge-field-input
+  value={mappings[field.id].expression}
+  placeholder="{!Record.FieldApiName}"
+  field-id={field.id}
+  onfill={handleFill}
+  onchange={handleExpressionChange}
+></c-merge-field-input>
+```
+```js
+handleFill(event) {
+  const { fieldId, value } = event.detail;
+  this.mappings[fieldId] = { ...this.mappings[fieldId], expression: value };
+}
+```
+
+Notice that LWC needs a **separate `onfill` event** because the fill is semantically different from a user typing. React doesn't need this distinction.
+
+---
+
+#### React implementation (Approach A: inline in `TreeInput` / `FlatInput`) — step by step
+
+React doesn't need a new component. The existing `TreeInput` and `FlatInput` helper functions in `MappingEditor.jsx` gain focus state and a Tab handler inline.
+
+**Step 1: Add focus state**
+```jsx
+const [isFocused, setIsFocused] = useState(false);
+```
+
+**Step 2: Derive the booleans** (same logic as LWC getters)
+```jsx
+const isMergeExpression = placeholder?.startsWith('{!') ?? false;
+const isEmpty = !value;
+const showTabHint = isFocused && isEmpty && isMergeExpression && !disabled;
+```
+
+**Step 3: Build the Tab handler**
+```jsx
+function handleKeyDown(e) {
+  if (e.key !== 'Tab' || e.shiftKey) return;
+  if (!isEmpty || !isMergeExpression || disabled) return;
+  e.preventDefault();
+  onChange(placeholder); // same callback as typing — no new event needed
+}
+```
+
+**Step 4: Wire up the input and render the hint**
+```jsx
+return (
+  <span className="input-with-hint">
+    <input
+      value={value || ''}
+      placeholder={placeholder}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      onKeyDown={handleKeyDown}
+      onChange={e => onChange(e.target.value)}
+      ...rest of existing props...
+    />
+    {showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
+  </span>
+);
+```
+
+**Step 5: No parent changes** — the `onChange(placeholder)` call routes through the same `handleMappingChange` in `App.jsx` as any typed value. LWC needed a distinct `onfill` event; React needs nothing extra because callbacks are just functions.
+
+---
+
+#### LWC ↔ React comparison table for this feature
+
+| Concept | LWC | React |
+|---|---|---|
+| Component state | `@track isFocused = false` | `const [isFocused, setIsFocused] = useState(false)` |
+| Derived computed value | `get showTabHint() { return ... }` | `const showTabHint = ...` (inline expression) |
+| Focus handler | `handleFocus() { this.isFocused = true; }` | `onFocus={() => setIsFocused(true)}` |
+| Blur handler | `handleBlur() { this.isFocused = false; }` | `onBlur={() => setIsFocused(false)}` |
+| Intercept keyboard event | `handleKeyDown(event) { event.preventDefault(); }` | `function handleKeyDown(e) { e.preventDefault(); }` |
+| Signal parent on fill | `dispatchEvent(new CustomEvent('fill', { detail }))` | `onChange(placeholder)` (calls prop directly) |
+| Conditional rendering | `<template if:true={showTabHint}>` | `{showTabHint && <span>...}` |
+| Parent listens for fill | `<c-input onfill={handleFill}>` | `<TreeInput onChange={handleMappingChange}>` — same handler, no extra event |
+
+The key difference: **LWC needs two events** (`onfill` + `onchange`) because it treats a Tab fill as semantically different from typing. React needs only one callback because the callback is just a function — the fill calls it the same way typing does.
+
+---
+
+#### Why Approach A (inline) before Approach B (custom hook)
+
+After implementing Approach A, `TreeInput` and `FlatInput` both contain identical Tab-fill logic (~12 lines each). This is visible, tangible duplication. The standard React solution is to extract it into a **custom hook**.
+
+**The rule of three:** Don't extract until you have at least 3 use cases of the same pattern. With only two call sites, the duplication is small and the abstraction may not have the right shape yet.
+
+**Sandi Metz:** *"Duplication is far cheaper than the wrong abstraction."*
+
+So Approach A ships first. When a third input (e.g. VariationAttrsPanel's expression field) adopts the pattern, *that's* the moment to extract. The extraction looks like:
+
+```js
+// src/hooks/useTabFill.js
+import { useState } from 'react';
+
+export function useTabFill({ value, placeholder, onChange, disabled }) {
+  const [isFocused, setIsFocused] = useState(false);
+  const isMergeExpression = placeholder?.startsWith('{!') ?? false;
+  const isEmpty = !value;
+  const showTabHint = isFocused && isEmpty && isMergeExpression && !disabled;
+
+  function handleKeyDown(e) {
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    if (!isEmpty || !isMergeExpression || disabled) return;
+    e.preventDefault();
+    onChange(placeholder);
+  }
+
+  return {
+    showTabHint,
+    inputProps: {
+      onFocus: () => setIsFocused(true),
+      onBlur:  () => setIsFocused(false),
+      onKeyDown: handleKeyDown,
+    },
+  };
+}
+```
+
+Then both `TreeInput` and `FlatInput` reduce to:
+```jsx
+const { showTabHint, inputProps } = useTabFill({ value, placeholder, onChange, disabled });
+// ...
+<input {...inputProps} value={value || ''} onChange={e => onChange(e.target.value)} />
+{showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
+```
+
+A custom hook:
+- Contains `useState` and event handlers, but **returns no JSX** — that's the key rule that distinguishes a hook from a component
+- Can call other hooks internally
+- Must follow the Rules of Hooks: called at the top level, never inside conditions or loops
+- Name starts with `use` (convention that React's linter enforces)
+
+The exercise of building Approach A first, seeing the duplication, then extracting it is the intended learning path.
+
+---
+
+## Flex Chain Breakage — The Wrapper Element Trap
+
+**Session date:** 2026-05-28
+
+### The bug
+
+When a `flex: 1` input is wrapped in a new element for layout reasons (e.g. to host a sibling hint span), the input loses its flex-child role. The *wrapper* becomes the flex child, and if the wrapper has no `flex` rule, it shrinks to its content.
+
+**Before Tab-to-fill:**
+```
+.tree-row (display: flex)
+└── input.tree-input (flex: 1)    ← direct flex child, fills remaining space
+```
+
+**After Tab-to-fill:**
+```
+.tree-row (display: flex)
+└── span.input-with-hint           ← new flex child — no flex: 1, collapses to min-content
+    └── input.tree-input (flex: 1) ← now filling its parent span, not the row
+```
+
+Every input across the tree collapsed to `min-width: 120px`, making them all look the same length regardless of the row's key length.
+
+### The fix pattern
+
+Add a **scoped** rule on the wrapper that restores the flex chain:
+
+```css
+.tree-row .input-with-hint {
+  flex: 1;
+  min-width: 0;   /* ← critical: see below */
+}
+```
+
+Scope it to the specific parent context (`.tree-row`) rather than making `.input-with-hint { flex: 1 }` global — other layouts (mobile flat form, variation rows) have their own scoped rules and different layout needs.
+
+### Why `min-width: 0`
+
+A flex item's default `min-width` is `auto`, meaning "at least as wide as my content's intrinsic minimum." Without overriding it, the span would refuse to shrink below the placeholder text's pixel width — causing the row to overflow on narrow panels when the placeholder is a long merge expression like `{!Record.ProductAttributes.FieldName__c}`.
+
+Setting `min-width: 0` says "defer to the flex algorithm for the minimum." The `<input>` inside still carries its own `min-width: 120px`, which becomes the real floor.
+
+**Rule of thumb:** whenever you wrap a flex child in a new element, immediately check:
+1. Does the wrapper need `flex: 1` (or `flex: 0 0 Npx`) to preserve the parent's layout intent?
+2. Does the wrapper need `min-width: 0` to allow shrinking past content intrinsic width?
+
+The same bug appeared in `VariationAttrsPanel` and was fixed the same way with `.custom-variation-row .input-with-hint { flex: 1; }`.
+
+---
+
+## `<details>` / `<summary>` — Zero-JS Accessible Disclosure
+
+**Session date:** 2026-05-28
+
+### When to reach for it
+
+The Variation Attributes panel had a schema.org advisory note that most users don't need on every visit. Instead of a `useState` boolean + conditional render, the native `<details>` element was used.
+
+### LWC equivalent pattern
+
+In LWC you'd track state explicitly:
+
+```js
+@track isNoteVisible = false;
+toggleNote() { this.isNoteVisible = !this.isNoteVisible; }
+```
+```html
+<button onclick={toggleNote}>?</button>
+<template if:true={isNoteVisible}>
+  <div class="info-body">...</div>
+</template>
+```
+
+### React `useState` equivalent
+
+```jsx
+const [open, setOpen] = useState(false);
+// ...
+<button onClick={() => setOpen(o => !o)} aria-expanded={open}>?</button>
+{open && <div className="info-body">...</div>}
+```
+
+### `<details>` — the zero-JS version
+
+```jsx
+<details className="variation-attrs-info">
+  <summary aria-label="Show schema.org guidance">?</summary>
+  <div className="variation-attrs-info-body">
+    <p>Note: ...</p>
+  </div>
+</details>
+```
+
+No state, no handler, no ARIA wiring. The browser provides:
+- Keyboard toggle (Enter/Space on `<summary>`)
+- `aria-expanded` state announced to screen readers automatically
+- An `open` attribute on `<details>` that CSS can target for styling
+
+### Styling the marker away
+
+The default browser disclosure triangle appears before `<summary>`. Remove it cross-browser with:
+
+```css
+summary::-webkit-details-marker { display: none; }  /* Chrome/Safari */
+summary::marker { content: ''; }                     /* Firefox/standard */
+```
+
+Then style `<summary>` as any element — in this case a 16×16px circular `(?)` badge.
+
+### When to use `<details>` vs `useState`
+
+| Use `<details>` | Use `useState` |
+|---|---|
+| Simple show/hide of supplemental info | Content affects layout significantly (panels, modals) |
+| No JS needed in the toggle action | Toggle triggers async work (API call, animation) |
+| Accessibility for free is a priority | State needs to sync with other component state |
+| The toggle lives entirely inside one component | Parent needs to know the open/closed status |
+
+The rule of thumb: if the only thing the toggle does is show/hide some HTML, `<details>` is almost always the right answer. Reach for `useState` when the toggle drives behaviour beyond rendering.
+
+### `focus-visible` vs `focus`
+
+The disclosure summary received a custom focus ring using `focus-visible` rather than `focus`:
+
+```css
+.variation-attrs-info summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus) 50%, transparent);
+  outline-offset: 2px;
+}
+```
+
+`focus-visible` fires only for keyboard navigation (Tab key), not mouse clicks. This matches how modern design systems style focus rings — sighted mouse users don't need the ring; keyboard and screen-reader users do. The browser uses internal heuristics to decide which applies.
+
+---
+
+## UI/UX — Grouped Card Pattern for Optional/Advanced Sections
+
+**Session date:** 2026-05-28
+
+### The problem with hard dividers
+
+A `border-top` creates a visual wall that implies two equal, parallel sections. Used between the main JSON tree editor and the Variation Attributes panel, it signalled "these are siblings" — but semantically, the variation panel is optional, advanced, and subordinate to the main editor.
+
+Four symptoms of the original design:
+1. Hard `border-top` — visual wall between two sections
+2. UPPERCASE `<h3>` in accent color — competing with the page heading
+3. Three paragraphs before any interactive UI — documentation dump before action
+4. Empty state: a lonely "+ Add" button — orphaned
+
+### The soft grouped card solution
+
+Instead of a hard line, use **background tint + border-radius** to do the grouping:
+
+```css
+.variation-attrs-panel {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  border-radius: 8px;
+  margin-top: 24px;
+  padding: 18px 20px;
+}
+```
+
+The same accent-tint language is used throughout the app (`.tree-input` uses 6%). A slightly lighter tint (4%) signals the panel is the *container*, and the inputs inside it remain the visually active elements.
+
+### Design token hierarchy
+
+| Element | Tint % | Role |
+|---|---|---|
+| `tree-input` background | 6% | Active edit target |
+| `variation-attrs-panel` background | 4% | Container / grouping surface |
+| `variation-attrs-info summary` | 15% → 25% hover | Interactive control |
+
+Consistent tint percentages give the UI a coherent material language without a full design token system.
+
+### Heading hierarchy matters
+
+Changing the heading from `<h3>` uppercase accent to `<h4>` sentence-case ink-colored removes the visual competition with the page's `<h2>` "Salesforce Bindings". The heading's semantic level should reflect its importance in the page outline, not its visual size.
+
+| Before | After |
+|---|---|
+| `<h3>` VARIATION ATTRIBUTES — accent color, uppercase, 15px bold | `<h4>` Custom variation attributes — ink color, sentence case, 14px semibold |
+
+---
+
+*This journal is updated as significant decisions are made or concepts are understood. Not every line of code needs to be documented — only the choices where the "why" isn't obvious from the code itself.*

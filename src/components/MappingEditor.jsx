@@ -16,18 +16,36 @@ function TypeTag({ hint }) {
 }
 
 function TreeInput({ id, value, disabled, onChange, placeholder }) {
+  const [isFocused, setIsFocused] = useState(false);
+  const isMergeExpression = placeholder?.startsWith('{!') ?? false;
+  const isEmpty = !value;
+  const showTabHint = isFocused && isEmpty && isMergeExpression && !disabled;
+
+  function handleKeyDown(e) {
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    if (!isEmpty || !isMergeExpression || disabled) return;
+    e.preventDefault();
+    onChange(placeholder);
+  }
+
   return (
-    <input
-      type="text"
-      className={'tree-input' + (disabled ? ' is-disabled' : '')}
-      id={id}
-      value={value || ''}
-      disabled={disabled}
-      autoComplete="off"
-      spellCheck={false}
-      placeholder={disabled ? undefined : placeholder}
-      onChange={e => onChange(e.target.value)}
-    />
+    <span className="input-with-hint">
+      <input
+        type="text"
+        className={'tree-input' + (disabled ? ' is-disabled' : '')}
+        id={id}
+        value={value || ''}
+        disabled={disabled}
+        autoComplete="off"
+        spellCheck={false}
+        placeholder={disabled ? undefined : placeholder}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        onKeyDown={handleKeyDown}
+        onChange={e => onChange(e.target.value)}
+      />
+      {showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
+    </span>
   );
 }
 
@@ -325,19 +343,37 @@ function TreeObjectField({ field, mapping, defaultType, typeOptions, onMappingCh
 // ── Flat form field renderers (mobile ≤640px) ─────────────────────────────────
 
 function FlatInput({ id, label, value, disabled, placeholder, onChange }) {
+  const [isFocused, setIsFocused] = useState(false);
+  const isMergeExpression = placeholder?.startsWith('{!') ?? false;
+  const isEmpty = !value;
+  const showTabHint = isFocused && isEmpty && isMergeExpression && !disabled;
+
+  function handleKeyDown(e) {
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    if (!isEmpty || !isMergeExpression || disabled) return;
+    e.preventDefault();
+    onChange(placeholder);
+  }
+
   return (
     <div className="mapping-row">
       <label htmlFor={id}>{label}</label>
-      <input
-        type="text"
-        id={id}
-        value={value || ''}
-        disabled={disabled}
-        placeholder={placeholder}
-        autoComplete="off"
-        spellCheck={false}
-        onChange={e => onChange(e.target.value)}
-      />
+      <span className="input-with-hint">
+        <input
+          type="text"
+          id={id}
+          value={value || ''}
+          disabled={disabled}
+          placeholder={placeholder}
+          autoComplete="off"
+          spellCheck={false}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onKeyDown={handleKeyDown}
+          onChange={e => onChange(e.target.value)}
+        />
+        {showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
+      </span>
     </div>
   );
 }

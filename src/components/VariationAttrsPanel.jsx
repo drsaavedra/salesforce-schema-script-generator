@@ -1,4 +1,8 @@
+import { useState } from 'react';
+
 export default function VariationAttrsPanel({ entries, onEntriesChange }) {
+  const [focusedExprId, setFocusedExprId] = useState(null);
+
   function handleAdd() {
     onEntriesChange([...entries, { id: crypto.randomUUID(), name: '', expression: '' }]);
   }
@@ -17,43 +21,72 @@ export default function VariationAttrsPanel({ entries, onEntriesChange }) {
 
   return (
     <div className="variation-attrs-panel">
-      <h3 className="variation-attrs-heading">Variation Attributes</h3>
+      <div className="variation-attrs-card-header">
+        <h4 className="variation-attrs-heading">Custom variation attributes</h4>
+        <details className="variation-attrs-info">
+          <summary aria-label="Show schema.org guidance">?</summary>
+          <div className="variation-attrs-info-body">
+            <p>
+              <strong>Note:</strong> schema.org recommends that well-known attributes —
+              such as <code>color</code>, <code>width</code>, <code>material</code>,
+              or <code>gtin13</code> — be mapped to their dedicated schema.org properties
+              instead of this generic mechanism, since structured-data consumers expect
+              to find those values at their specific property paths.
+            </p>
+          </div>
+        </details>
+      </div>
       <p className="variation-attrs-hint">
-        Use this section if you implement Variation Products (e.g. a specific size or color of a parent product).
-      </p>
-      <p className="variation-attrs-hint">
-        Add one row per variation attribute — each outputs as an additionalProperty / PropertyValue node in the JSON-LD and should bind to a field on the ProductAttributes object, e.g. {'{!Record.ProductAttributes.Color__c}'}.
+        For proprietary fields with no dedicated schema.org property — each row outputs as an <code>additionalProperty / PropertyValue</code> node bound to a <code>ProductAttributes</code> field.
       </p>
       <div className="custom-variation-list">
-        {entries.map(entry => (
-          <div key={entry.id} className="custom-variation-row">
-            <input
-              type="text"
-              className="custom-variation-name"
-              value={entry.name}
-              placeholder="e.g. Angle"
-              autoComplete="off"
-              spellCheck={false}
-              onChange={e => handleNameChange(entry.id, e.target.value)}
-            />
-            <input
-              type="text"
-              className="custom-variation-expression"
-              value={entry.expression}
-              placeholder={`{!Record.ProductAttributes.${entry.name || 'FieldName'}__c}`}
-              autoComplete="off"
-              spellCheck={false}
-              onChange={e => handleExpressionChange(entry.id, e.target.value)}
-            />
-            <button
-              type="button"
-              className="btn-remove"
-              onClick={() => handleRemove(entry.id)}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+        {entries.map(entry => {
+          const exprPlaceholder = `{!Record.ProductAttributes.${entry.name || 'FieldName'}__c}`;
+          const showTabHint = focusedExprId === entry.id && !entry.expression;
+
+          function handleExprKeyDown(e) {
+            if (e.key !== 'Tab' || e.shiftKey) return;
+            if (entry.expression) return;
+            e.preventDefault();
+            handleExpressionChange(entry.id, exprPlaceholder);
+          }
+
+          return (
+            <div key={entry.id} className="custom-variation-row">
+              <input
+                type="text"
+                className="custom-variation-name"
+                value={entry.name}
+                placeholder="Attribute Name"
+                autoComplete="off"
+                spellCheck={false}
+                onChange={e => handleNameChange(entry.id, e.target.value)}
+              />
+              <span className="input-with-hint">
+                <input
+                  type="text"
+                  className="custom-variation-expression"
+                  value={entry.expression}
+                  placeholder={exprPlaceholder}
+                  autoComplete="off"
+                  spellCheck={false}
+                  onFocus={() => setFocusedExprId(entry.id)}
+                  onBlur={() => setFocusedExprId(null)}
+                  onKeyDown={handleExprKeyDown}
+                  onChange={e => handleExpressionChange(entry.id, e.target.value)}
+                />
+                {showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
+              </span>
+              <button
+                type="button"
+                className="btn-remove"
+                onClick={() => handleRemove(entry.id)}
+              >
+                Remove
+              </button>
+            </div>
+          );
+        })}
         <button type="button" className="btn-add-entry" onClick={handleAdd}>
           + Add variation attribute
         </button>

@@ -23,10 +23,6 @@ export default function FieldList({
       )
     : fields;
 
-  const sorted = [
-    ...filtered.filter(f => selectedFields.has(f.id)),
-    ...filtered.filter(f => !selectedFields.has(f.id)),
-  ];
 
   function handleSelectAllMatching() {
     for (const f of filtered) {
@@ -81,12 +77,12 @@ export default function FieldList({
             {schemaError}
           </p>
         )}
-        {!schemaLoading && !schemaError && sorted.length === 0 && (
+        {!schemaLoading && !schemaError && filtered.length === 0 && (
           <p className="status" style={{ gridColumn: '1 / -1' }}>
             {query ? 'No fields match your search.' : 'No fields available.'}
           </p>
         )}
-        {!schemaLoading && !schemaError && sorted.map(field => {
+        {!schemaLoading && !schemaError && filtered.map(field => {
           const isSelected = selectedFields.has(field.id);
           return (
             <button
