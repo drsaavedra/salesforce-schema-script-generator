@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { loadSchemaFields } from './schema-parser.js';
 import { DEFAULT_OFFER } from './constants.js';
 import StepsNav from './components/StepsNav.jsx';
@@ -34,6 +34,7 @@ export default function App() {
   const [mappings, setMappings] = useState({});
   const [customVariations, setCustomVariations] = useState([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const previewButtonRef = useRef(null);
   const [includeBreadcrumbList, setIncludeBreadcrumbList] = useState(false);
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function App() {
         <StepsNav currentStep={currentStep} onGoToStep={setCurrentStep} />
 
         <div className="schema-toolbar">
-          <button type="button" className="btn-preview-schema" onClick={() => setIsPreviewOpen(true)}>
+          <button ref={previewButtonRef} type="button" className="btn-preview-schema" onClick={() => setIsPreviewOpen(true)}>
             Preview Schema
           </button>
         </div>
@@ -182,7 +183,10 @@ export default function App() {
         mappings={mappings}
         customVariations={customVariations}
         includeBreadcrumbList={includeBreadcrumbList}
-        onClose={() => setIsPreviewOpen(false)}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          previewButtonRef.current?.focus();
+        }}
       />
     </>
   );
