@@ -983,6 +983,76 @@ The migration from vanilla JS to React is fundamentally a shift from *imperative
 
 ---
 
+### Re-Render Defaults — React is Eager, LWC is Lazy (The Inversion)
+
+React and LWC share the *declarative* model, but their **default re-render behavior is opposite**. This is the single most important thing to internalize when moving between them, because the optimization work flips direction.
+
+| | LWC | React |
+|---|---|---|
+| **Default** | A component re-renders **only when a reactive field it reads changes.** A parent re-rendering does *not* re-render a child unless a prop passed to it changed. | A component re-renders **whenever its parent re-renders** — by default, regardless of whether its own props changed. |
+| **Mental model** | Lazy. The framework tracks *what* changed and updates just that. | Eager. The framework re-runs the whole subtree on any render and trusts you to opt out. |
+| **So "optimizing" means…** | Occasionally *adding* a gate to suppress an expensive op — e.g. `if (fieldName === 'Name') doExpensiveThing()`. | *Opting out* of the default eager re-render with `React.memo` + stable props. |
+
+**The practical consequence:** in LWC you reach for selectivity *occasionally*, when profiling shows a hot getter or a heavy `renderedCallback`. In React you reach for it *deliberately* whenever a parent re-renders often and its children are expensive — because React will re-render those children for free every time unless you stop it.
+
+```
+LWC:    data changes ──► only dependent components re-render        (selective by default)
+React:  parent renders ──► entire subtree re-renders                (eager by default)
+        add React.memo ──► subtree skips when props are === previous (you restore selectivity)
+```
+
+**Why React.memo feels like more ceremony than your LWC `if` gate:** in LWC the framework already answers "did `fieldName` change?" for you via reactivity. In React you must *manually guarantee* that nothing changed, and you prove it by **reference equality** — which is the whole `useCallback` / `useMemo` / stable-object machinery. Your one-line LWC `if` becomes four coordinated pieces in React because React doesn't track *what* changed, only *that a render happened*. (See the `MappingEditor` memoized row renderers and the per-finding write-up in `PERFORMANCE.md`.)
+
+**The habit that will bite you:** LWC historically let you **mutate** tracked objects/arrays in place and reactivity would notice. React compares by reference — mutate in place and `React.memo` thinks nothing changed and skips the render, leaving the UI stale. React's contract is **never mutate, always replace** (see *Immutability — React Only Re-Renders on New References* above). The LWC reflex "just set the property" is actively dangerous in React.
+
+---
+
+### Performance Optimization — Same Instincts, Different Triggers
+
+Most optimization patterns are framework-agnostic; the instinct you build in one carries to the other. The difference is only *when* the framework forces you to apply them.
+
+| Pattern | LWC form | React form | Transfers? |
+|---|---|---|---|
+| **Map for lookups** | Replace `list.find()` in a loop with a `Map` when the list grows and rendering slows | Same — `new Map(items.map(i => [i.id, i]))`, then `O(1)` `.get()` | **1:1.** Purely algorithmic, no framework involved. `O(n×m) → O(n+m)`. |
+| **Cache derived values** | Private field + recompute a getter only when its input changed (LWC getters re-run every render, like React function bodies) | `useMemo(() => compute(), [deps])` | Same instinct, formalized with a dependency array. |
+| **Skip unnecessary renders** | *Add* a gate: `if (relevantThing changed) render` | `React.memo` + stable props — *remove* the eager default | Same goal, **inverted starting point** (see above). |
+| **Hoist work out of loops** | Don't `new RegExp()` / rebuild objects inside a `for:each` getter | Same — build the regex / Map once before the loop | 1:1, language-level, not framework. |
+
+**Rule of thumb that ports your LWC profiling instinct directly:** in React, every render is *cheap to trigger but expensive to propagate*. Triggering a parent render costs almost nothing; what costs you is the subtree re-rendering underneath. `React.memo` cuts the propagation — it's exactly the boundary an LWC `if` gate draws, just enforced by reference equality instead of a value check.
+
+---
+
+### When to Reach for React vs. LWC (Decision Framework)
+
+The question "do I build this component in React or stay in LWC?" is mostly answered by **where it runs**, then by team and interactivity factors. The re-render model is a tiebreaker, not the deciding factor.
+
+**First filter — where does it live?**
+
+| If it runs… | Use | Why |
+|---|---|---|
+| Inside Lightning Experience, Experience Builder, Flow screens, or the Salesforce mobile app | **LWC** | LWC is the native citizen there. It gets SLDS, base components (`lightning-datatable`, `lightning-record-form`), wire adapters, Lightning Data Service caching, and the platform security model (LWS) for free. Dropping React in fights the platform — no wire adapters, no base components, manual everything. |
+| A standalone web app, marketing/SEO site, internal tool, Heroku app, or anything consuming Salesforce **via API** from outside | **React** (or any web framework) | You're off-platform. None of LWC's platform integration applies, and React's ecosystem (routing, state libs, component kits, Vite/Next build) is far richer. *This project is exactly this case — a static SEO tool, so React/Vite was the right call.* |
+
+**Second filter — when it could go either way (e.g. an Experience Cloud / LWR site, or a greenfield external app):**
+
+| Lean **LWC** when… | Lean **React** when… |
+|---|---|
+| Tight Salesforce data binding (wire adapters, record CRUD, governor-limit-aware patterns) | Complex *client-side* state, multi-step flows, heavy interactivity, optimistic UI |
+| The UI is mostly record detail / list / form — the lazy-by-default reactivity means little manual perf tuning | You need fine-grained render control and are willing to own it with `memo`/`useMemo` |
+| You want SLDS + base components out of the box, admin-configurable | You want a specific ecosystem library (animation, data grid, charting) that has no LWC equivalent |
+| The team's expertise and existing codebase are Salesforce-native | The team is React-strong, or the app must share code with a non-Salesforce React frontend |
+| Security/compliance leans on Locker/LWS | SEO/SSR/static generation matters (Vite/Next) |
+
+**The re-render model as a tiebreaker:**
+- LWC's **lazy** default means typical CRUD/record UIs perform well with *zero* perf tuning — the framework's selectivity is doing the work your `React.memo` would have to do manually.
+- React's **eager** default means more perf responsibility on you, but in exchange more *control* — which pays off for highly interactive UIs where you want to decide exactly what re-renders and when.
+
+**Heuristic:** *On-platform → LWC almost always wins (it's home turf). Off-platform → React usually wins (richer ecosystem, better build tooling). The re-render inversion only decides close calls: pick LWC if you want the framework to manage render selectivity for you, pick React if you want to manage it yourself.*
+
+A note on "Salesforce going multi-framework": even if more surfaces open to React over time, the *where it runs* filter stays the dominant factor — the value of LWC has never been the framework itself but its **platform integration** (wire, base components, LDS, security). A React component on a Salesforce surface still wouldn't get those for free. Judge by integration cost, not framework preference.
+
+---
+
 ### Tab-to-Fill Placeholder — LWC ↔ React Parallel
 
 **Feature:** When an input that has a Salesforce merge-expression placeholder (e.g. `{!Record.Name}`) is empty and focused, a subtle hint `Tab ↹ to fill` appears next to it. Pressing Tab populates the input with the placeholder value and keeps focus on the field. A second Tab advances focus normally.
