@@ -1,16 +1,17 @@
 # QA Test 2 — Data Types & Validation
 
 **Scope:** Verify field data type handling, type hint badges, warning system, and FIELD_EXCLUSIONS.  
-**Method:** Static code trace through `src/components/ScriptOutput.jsx`, `src/schema-parser.js`, and `src/components/MappingEditor.jsx`.
+**Method:** Static code trace through `src/utils/schemaBuilder.js`, `src/components/ScriptOutput.jsx`, `src/schema-parser.js`, and `src/components/MappingEditor.jsx`.
 
 ---
 
 ## How to run
 
 Feed this file as the prompt to a QA subagent, pointing it at:
-- `src/components/ScriptOutput.jsx` — `applySelectedField`, `buildWarnings`, `detectOutputErrors`
+- `src/utils/schemaBuilder.js` — `applySelectedField` (field-by-valueType serialization), `applyCustomVariations`, `buildProductGraph`
+- `src/components/ScriptOutput.jsx` — `buildWarnings`, `detectOutputErrors`, `graphToJsonWithExpressions`
 - `src/components/MappingEditor.jsx` — `<TypeTag>` component
-- `src/schema-parser.js` — `FIELD_EXCLUSIONS`, TTL parser functions
+- `src/schema-parser.js` — `FIELD_EXCLUSIONS`, TTL parser functions (`extractProperties` builds one alternation RegExp before the block loop)
 - `src/constants.js`
 
 ---
@@ -84,7 +85,7 @@ Confirm `/(?:rdfs:|:)subClassOf\s+([^;.]+)/g` captures subclass relationships fr
 **Expected:** `Product` → `["Thing"]` ancestor chain resolved correctly.
 
 ### TC2-18 — Schema-parser v30 TTL compatibility: extractProperties domainIncludes
-Confirm the regex `new RegExp('(?:schema:)?:?${t}\\b').test(domainStr)` matches both `schema:Product` and `:Product` in the domainIncludes segment.
+Confirm `extractProperties` builds ONE alternation regex before the block loop — `new RegExp('(?:schema:)?:?(?:' + escapedTypes.join('|') + ')\\b')` — and that it matches both `schema:Product` and `:Product` in the domainIncludes segment. (Optimization: replaced the previous per-type `new RegExp` compiled inside the loop; behavior is equivalent.)
 
 ---
 

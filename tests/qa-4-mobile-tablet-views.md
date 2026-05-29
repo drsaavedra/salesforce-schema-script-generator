@@ -8,9 +8,10 @@
 ## How to run
 
 Feed this file as the prompt to a QA subagent, pointing it at:
-- `src/components/MappingEditor.jsx` — contains `MappingEditor` (main), `TreeInput`, `FlatInput`, `FlatGenericField`, `FlatOfferField`, `FlatPropertyValueField`, `FlatUseDefault`, `TreeOfferField`, `TreePropertyValueField`, `TreeObjectField`, `TreeGenericField`
+- `src/components/MappingEditor.jsx` — `MappingEditor` (main), `TreeInput`, `FlatInput`, `FlatGenericField`, `FlatOfferField`, `FlatPropertyValueField`, `FlatObjectField`, `FlatUseDefault`, `TreeOfferField`, `TreePropertyValueField`, `TreeObjectField`, `TreeGenericField`, plus the memoized row dispatchers `TreeFieldRenderer` / `FlatFieldRenderer` / `FlatAccordionField`
 - `src/components/VariationAttrsPanel.jsx`
 - `src/App.jsx`
+- `src/constants.js` — `MOBILE_BREAKPOINT` / `MOBILE_MEDIA_QUERY` (the view-switch breakpoint, = 640px)
 - `src/styles.css`
 
 ---
@@ -127,7 +128,7 @@ Verify `src/styles.css` rule: `.mapping-accordion.is-closed .mapping-accordion-b
 
 ### TC4-30 — No regression: tree view still works on tablet+
 When `isMobile` is false, `MappingEditor.jsx` renders the tree branch (lines 632–658) with `.tree-mapping-editor` and the JSON-like tree node structure.  
-**Expected:** Tree view renders identically on tablet/desktop. `renderTreeField(field)` dispatch (line 571–576) routes each field to its appropriate tree renderer (`TreeOfferField`, `TreePropertyValueField`, `TreeObjectField`, or `TreeGenericField`).
+**Expected:** Tree view renders identically on tablet/desktop. The memoized `TreeFieldRenderer` component dispatches each field to its appropriate tree renderer (`TreeOfferField`, `TreePropertyValueField`, `TreeObjectField`, or `TreeGenericField`).
 
 ### TC4-31 — Variation Attributes panel renders in mobile (flat) view
 `App.jsx` lines 155–158: `<VariationAttrsPanel>` is rendered as a **sibling** to `<MappingEditor>` in the Step 2 block — not inside the mobile or tree view rendering path.  

@@ -14,6 +14,8 @@ Feed this file as the prompt to a QA subagent, pointing it at:
 - `src/components/FieldList.jsx`
 - `src/components/StepsNav.jsx`
 - `src/components/VariationAttrsPanel.jsx`
+- `src/components/MappingEditor.jsx` — `TreeInput`/`FlatInput` and the memoized `TreeFieldRenderer`/`FlatFieldRenderer`/`FlatAccordionField`
+- `src/hooks/useTabToFill.js` — shared Tab-to-fill logic used by TreeInput, FlatInput, and VariationAttrsPanel's `VariationRow`
 - `src/styles.css`
 
 ---
@@ -119,8 +121,8 @@ Replacement uses `() => value` (not `value` directly) in `ScriptOutput.jsx` `gra
 **Expected:** Panel renders as a sibling below `<MappingEditor>` on Step 2. Visible even with zero selected fields (MappingEditor shows its own "no fields selected" empty state but the panel still renders).
 
 ### TC3-25 — Variation row: expression placeholder updates on name change
-`VariationAttrsPanel.jsx` line 53: `const exprPlaceholder = \`{!Record.ProductAttributes.${entry.name || 'FieldName'}__c}\``.  
-**Expected:** The placeholder is recomputed every render from the current `entry.name` value. When the user types `"Color"` into the name input, the next render computes `"{!Record.ProductAttributes.Color__c}"` as the expression placeholder. If name is cleared, placeholder falls back to `"{!Record.ProductAttributes.FieldName__c}"`.
+`VariationAttrsPanel.jsx` — inside the `VariationRow` component: the raw `entry.name` is first sanitized to `safeName` (`(entry.name || '').replace(/\W+/g, '_').replace(/^[\d_]+|_+$/g, '') || 'FieldName'`), then `const exprPlaceholder = \`{!Record.ProductAttributes.${safeName}__c}\``.  
+**Expected:** The placeholder is recomputed every render from the current `entry.name`. Typing `"Color"` yields `"{!Record.ProductAttributes.Color__c}"`. Non-identifier characters are collapsed to `_` (e.g. `"my color"` → `my_color__c`). If name is empty, `safeName` falls back to `FieldName` → `"{!Record.ProductAttributes.FieldName__c}"`.
 
 ### TC3-26 — Variation row: Remove button removes entry and updates output
 `handleRemove(id)` in `VariationAttrsPanel.jsx` lines 12–13: `onEntriesChange(entries.filter(e => e.id !== id))`.  

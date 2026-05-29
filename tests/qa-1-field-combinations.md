@@ -1,7 +1,7 @@
 # QA Test 1 — Field Combinations
 
 **Scope:** Verify that every field valueType produces correct JSON-LD output.  
-**Method:** Static code trace through `src/components/ScriptOutput.jsx` and `src/schema-parser.js`.  
+**Method:** Static code trace through `src/utils/schemaBuilder.js` and `src/schema-parser.js`.  
 **Input convention:** Use `{!Record.Name}` as the expression value unless the test case requires something specific.
 
 ---
@@ -9,8 +9,9 @@
 ## How to run
 
 Feed this file as the prompt to a QA subagent, pointing it at:
-- `src/components/ScriptOutput.jsx` — contains module-private helpers `applySelectedField`, `graphToJsonWithExpressions`, `applyCustomVariations`, `buildScript`, `buildWarnings`, `detectOutputErrors`
-- `src/components/SchemaPreviewModal.jsx` — contains parallel duplicates `applySelectedFieldToGraph`, `applyCustomVariationsToGraph`, `buildPreviewGraph` (same logic, different names)
+- `src/utils/schemaBuilder.js` — shared graph-building logic: `applySelectedField`, `applyCustomVariations`, `buildProductGraph` (used by BOTH ScriptOutput and SchemaPreviewModal — no duplication)
+- `src/components/ScriptOutput.jsx` — `buildScript` (wraps `buildProductGraph` + breadcrumb), `graphToJsonWithExpressions`, `buildWarnings`, `detectOutputErrors`
+- `src/components/SchemaPreviewModal.jsx` — calls the shared `buildProductGraph`; renders the preview tree
 - `src/schema-parser.js`
 - `src/constants.js`
 
@@ -19,7 +20,7 @@ Feed this file as the prompt to a QA subagent, pointing it at:
 ## Test cases
 
 ### TC1-01 — valueType "text"
-Trace `applySelectedField()` in `ScriptOutput.jsx` for a plain text field (e.g. `name`, `sku`).  
+Trace `applySelectedField()` in `src/utils/schemaBuilder.js` for a plain text field (e.g. `name`, `sku`).  
 **Expected:** `graph[field.path] = value` — string emitted with quotes in JSON output.
 
 ### TC1-02 — valueType "raw"
@@ -71,7 +72,7 @@ Navigate to Step 2, then back to Step 1 via `setCurrentStep(1)`. Deselect a fiel
 **Expected:** The deselected field's row is absent from `MappingEditor`. Derived via `fields.filter(f => selectedFields.has(f.id))` in `MappingEditor.jsx` line 559 — the field was removed from the `selectedFields` Set, so it no longer appears.
 
 ### TC1-15 — BreadcrumbList in output
-When `includeBreadcrumbList` is true, trace `buildScript()` in `ScriptOutput.jsx` lines 169–183.  
+When `includeBreadcrumbList` is true, trace `buildScript()` in `ScriptOutput.jsx` (which wraps the graph from `buildProductGraph`).  
 **Expected:** Output contains exactly one `<script type="application/ld+json">` block whose content is a JSON array with two elements: the Product object and a BreadcrumbList object with `"itemListElement": "{!Record.BreadcrumbList}"`.
 
 ### TC1-16 — valueType "commaSeparatedArray": multiple values
