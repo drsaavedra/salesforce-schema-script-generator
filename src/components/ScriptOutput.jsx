@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { RAW_EXPRESSION_KEY } from '../utils/rawExpression.js';
-import { applySelectedField, applyCustomVariations } from '../utils/schemaBuilder.js';
+import { buildProductGraph } from '../utils/schemaBuilder.js';
 
 // ── Raw expression helpers ────────────────────────────────────────────────────
 
@@ -36,21 +36,7 @@ function graphToJsonWithExpressions(graph) {
  * Assembles the full <script> block for the selected fields.
  */
 function buildScript(selectedFields, fields, mappings, customVariations, includeBreadcrumbList) {
-  const graph = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-  };
-
-  for (const fieldId of selectedFields) {
-    const field = fields.find(f => f.id === fieldId);
-    if (field) {
-      const mapping = mappings[fieldId] || {};
-      applySelectedField(graph, field, mapping);
-    }
-  }
-
-  applyCustomVariations(graph, customVariations);
-
+  const graph = buildProductGraph(selectedFields, fields, mappings, customVariations);
   const productJson = graphToJsonWithExpressions(graph);
 
   if (!includeBreadcrumbList) {
@@ -75,9 +61,10 @@ function buildScript(selectedFields, fields, mappings, customVariations, include
  */
 function buildWarnings(selectedFields, fields, mappings, customVariations) {
   const warnings = [];
+  const fieldsById = new Map(fields.map(f => [f.id, f]));
 
   for (const fieldId of selectedFields) {
-    const field = fields.find(f => f.id === fieldId);
+    const field = fieldsById.get(fieldId);
     if (!field) continue;
     const mapping = mappings[fieldId] || {};
 
@@ -183,14 +170,17 @@ export default function ScriptOutput({
 }) {
   const [copyStatus, setCopyStatus] = useState('');
 
-  const scriptText = buildScript(
-    selectedFields,
-    fields,
-    mappings,
-    customVariations,
-    includeBreadcrumbList
+  // Derived state: recompute only when an input actually changes, not on every
+  // render (e.g. typing in the copy-status timeout, or the breadcrumb toggle
+  // re-rendering this component without touching the field data).
+  const scriptText = useMemo(
+    () => buildScript(selectedFields, fields, mappings, customVariations, includeBreadcrumbList),
+    [selectedFields, fields, mappings, customVariations, includeBreadcrumbList]
   );
-  const warnings = buildWarnings(selectedFields, fields, mappings, customVariations);
+  const warnings = useMemo(
+    () => buildWarnings(selectedFields, fields, mappings, customVariations),
+    [selectedFields, fields, mappings, customVariations]
+  );
 
   async function handleCopy() {
     const errors = detectOutputErrors(scriptText);

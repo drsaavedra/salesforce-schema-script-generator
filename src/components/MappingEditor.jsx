@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { OFFER_TYPES, SELLER_TYPES, BRAND_TYPES, ORGANIZATION_TYPES, TYPE_HINT_DETAILS, DEFAULT_OFFER, MOBILE_MEDIA_QUERY } from '../constants.js';
 import { useTabToFill } from '../hooks/useTabToFill.js';
+
+// Shared empty-mapping fallback. Using one frozen reference (rather than a fresh
+// `{}` literal per render) keeps the `mapping` prop referentially stable for
+// fields that have no mapping yet, so memoized rows below don't re-render.
+const EMPTY_MAPPING = Object.freeze({});
 
 // ── Shared primitive helpers ──────────────────────────────────────────────────
 
@@ -561,6 +566,49 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
   );
 }
 
+// ── Memoized row renderers ────────────────────────────────────────────────────
+// One memoized component per row dispatches to the right field renderer. Because
+// these are wrapped in memo() and receive only stable props (field + the field's
+// own mapping slice + the stable onMappingChange/onToggle callbacks), editing one
+// field re-renders only that field's row — the rest of the selected-field tree is
+// skipped. Memoizing here (the row boundary) rather than on the leaf inputs is the
+// right granularity: when a row is skipped, none of its children run at all.
+
+const TreeFieldRenderer = memo(function TreeFieldRenderer({ field, mapping, onMappingChange }) {
+  if (field.valueType === 'offer') return <TreeOfferField field={field} mapping={mapping} onMappingChange={onMappingChange} />;
+  if (field.valueType === 'propertyValue') return <TreePropertyValueField field={field} mapping={mapping} onMappingChange={onMappingChange} />;
+  if (field.valueType === 'brand') return <TreeObjectField field={field} mapping={mapping} defaultType="Brand" typeOptions={BRAND_TYPES} onMappingChange={onMappingChange} />;
+  if (field.valueType === 'organization') return <TreeObjectField field={field} mapping={mapping} defaultType="Organization" typeOptions={ORGANIZATION_TYPES} onMappingChange={onMappingChange} />;
+  return <TreeGenericField field={field} mapping={mapping} onMappingChange={onMappingChange} />;
+});
+
+const FlatFieldRenderer = memo(function FlatFieldRenderer({ field, mapping, onMappingChange }) {
+  if (field.valueType === 'brand') return <FlatObjectField field={field} mapping={mapping} defaultType="Brand" typeOptions={BRAND_TYPES} onMappingChange={onMappingChange} />;
+  if (field.valueType === 'organization') return <FlatObjectField field={field} mapping={mapping} defaultType="Organization" typeOptions={ORGANIZATION_TYPES} onMappingChange={onMappingChange} />;
+  return <FlatGenericField field={field} mapping={mapping} onMappingChange={onMappingChange} />;
+});
+
+const FlatAccordionField = memo(function FlatAccordionField({ field, mapping, isClosed, onToggle, onMappingChange }) {
+  const summary = field.valueType === 'offer'
+    ? (mapping.priceExpression || DEFAULT_OFFER.priceExpression)
+    : `${(mapping.entries || []).length} propert${(mapping.entries || []).length === 1 ? 'y' : 'ies'}`;
+  return (
+    <div className={'mapping-accordion' + (isClosed ? ' is-closed' : '')}>
+      <button type="button" className="mapping-accordion-header" onClick={() => onToggle(field.id)}>
+        <span className="mapping-accordion-title">{field.label}</span>
+        <span className="mapping-accordion-summary">{summary}</span>
+        <span className="mapping-accordion-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div className="mapping-accordion-body">
+        {field.valueType === 'offer'
+          ? <FlatOfferField field={field} mapping={mapping} onMappingChange={onMappingChange} />
+          : <FlatPropertyValueField field={field} mapping={mapping} onMappingChange={onMappingChange} />
+        }
+      </div>
+    </div>
+  );
+});
+
 // ── Main MappingEditor component ──────────────────────────────────────────────
 
 export default function MappingEditor({ selectedFields, fields, mappings, onMappingChange, onReset }) {
@@ -574,24 +622,24 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const selected = fields.filter(f => selectedFields.has(f.id));
+  // Recompute the selected-field list only when the selection or field set
+  // changes — NOT when `mappings` changes (i.e. not on every keystroke). Keeping
+  // this array referentially stable across keystrokes is what allows the
+  // memoized rows below to skip re-rendering.
+  const selected = useMemo(
+    () => fields.filter(f => selectedFields.has(f.id)),
+    [fields, selectedFields]
+  );
 
-  function handleAccordionToggle(fieldId) {
+  // Stable callback so memoized FlatAccordionField rows aren't invalidated when
+  // an unrelated accordion is toggled.
+  const handleAccordionToggle = useCallback((fieldId) => {
     setClosedMappings(prev => {
       const next = new Set(prev);
       next.has(fieldId) ? next.delete(fieldId) : next.add(fieldId);
       return next;
     });
-  }
-
-  function renderTreeField(field) {
-    const mapping = mappings[field.id] || {};
-    if (field.valueType === 'offer') return <TreeOfferField key={field.id} field={field} mapping={mapping} onMappingChange={onMappingChange} />;
-    if (field.valueType === 'propertyValue') return <TreePropertyValueField key={field.id} field={field} mapping={mapping} onMappingChange={onMappingChange} />;
-    if (field.valueType === 'brand') return <TreeObjectField key={field.id} field={field} mapping={mapping} defaultType="Brand" typeOptions={BRAND_TYPES} onMappingChange={onMappingChange} />;
-    if (field.valueType === 'organization') return <TreeObjectField key={field.id} field={field} mapping={mapping} defaultType="Organization" typeOptions={ORGANIZATION_TYPES} onMappingChange={onMappingChange} />;
-    return <TreeGenericField key={field.id} field={field} mapping={mapping} onMappingChange={onMappingChange} />;
-  }
+  }, []);
 
   if (!selected.length) {
     return (
@@ -622,35 +670,20 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
             <li>Type an API name (e.g. <code>Name</code> or <code>Price__c</code>) and press <kbd>Tab ↹</kbd> to wrap it automatically.</li>
           </ul>
           {selected.map(field => {
-            const mapping = mappings[field.id] || {};
+            const mapping = mappings[field.id] || EMPTY_MAPPING;
             const needsAccordion = field.valueType === 'offer' || field.valueType === 'propertyValue';
             if (!needsAccordion) {
-              if (field.valueType === 'brand') {
-                return <FlatObjectField key={field.id} field={field} mapping={mapping} defaultType="Brand" typeOptions={BRAND_TYPES} onMappingChange={onMappingChange} />;
-              }
-              if (field.valueType === 'organization') {
-                return <FlatObjectField key={field.id} field={field} mapping={mapping} defaultType="Organization" typeOptions={ORGANIZATION_TYPES} onMappingChange={onMappingChange} />;
-              }
-              return <FlatGenericField key={field.id} field={field} mapping={mapping} onMappingChange={onMappingChange} />;
+              return <FlatFieldRenderer key={field.id} field={field} mapping={mapping} onMappingChange={onMappingChange} />;
             }
-            const isClosed = closedMappings.has(field.id);
-            const summary = field.valueType === 'offer'
-              ? (mapping.priceExpression || DEFAULT_OFFER.priceExpression)
-              : `${(mapping.entries || []).length} propert${(mapping.entries || []).length === 1 ? 'y' : 'ies'}`;
             return (
-              <div key={field.id} className={'mapping-accordion' + (isClosed ? ' is-closed' : '')}>
-                <button type="button" className="mapping-accordion-header" onClick={() => handleAccordionToggle(field.id)}>
-                  <span className="mapping-accordion-title">{field.label}</span>
-                  <span className="mapping-accordion-summary">{summary}</span>
-                  <span className="mapping-accordion-chevron" aria-hidden="true">▼</span>
-                </button>
-                <div className="mapping-accordion-body">
-                  {field.valueType === 'offer'
-                    ? <FlatOfferField field={field} mapping={mapping} onMappingChange={onMappingChange} />
-                    : <FlatPropertyValueField field={field} mapping={mapping} onMappingChange={onMappingChange} />
-                  }
-                </div>
-              </div>
+              <FlatAccordionField
+                key={field.id}
+                field={field}
+                mapping={mapping}
+                isClosed={closedMappings.has(field.id)}
+                onToggle={handleAccordionToggle}
+                onMappingChange={onMappingChange}
+              />
             );
           })}
         </div>
@@ -675,7 +708,14 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
                   <span className="tree-colon">:</span>
                   <span className="tree-val-string">"Product"</span>
                 </div>
-                {selected.map(field => renderTreeField(field))}
+                {selected.map(field => (
+                  <TreeFieldRenderer
+                    key={field.id}
+                    field={field}
+                    mapping={mappings[field.id] || EMPTY_MAPPING}
+                    onMappingChange={onMappingChange}
+                  />
+                ))}
               </div>
               <span className="tree-brace">{"}"}</span>
             </div>

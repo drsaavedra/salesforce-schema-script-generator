@@ -1,24 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { RAW_EXPRESSION_KEY } from '../utils/rawExpression.js';
-import { applySelectedField, applyCustomVariations } from '../utils/schemaBuilder.js';
-
-function buildPreviewGraph(selectedFields, fields, mappings, customVariations) {
-  const graph = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-  };
-
-  for (const fieldId of selectedFields) {
-    const field = fields.find(f => f.id === fieldId);
-    if (field) {
-      const mapping = mappings[fieldId] || {};
-      applySelectedField(graph, field, mapping);
-    }
-  }
-
-  applyCustomVariations(graph, customVariations);
-  return graph;
-}
+import { buildProductGraph } from '../utils/schemaBuilder.js';
 
 // ── JSON tree renderer ────────────────────────────────────────────────────────
 
@@ -118,7 +100,7 @@ export default function SchemaPreviewModal({
 
   if (!isOpen) return null;
 
-  const graph = buildPreviewGraph(selectedFields, fields, mappings, customVariations);
+  const graph = buildProductGraph(selectedFields, fields, mappings, customVariations);
 
   return (
     <div

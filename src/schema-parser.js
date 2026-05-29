@@ -139,6 +139,11 @@ function getAncestors(classMap, typeName) {
 // Returns [{propName, comment}].
 function extractProperties(blocks, targetTypes) {
   const results = [];
+  // Build ONE alternation regex for all target types up front, instead of
+  // compiling a fresh RegExp per type for every block (the TTL has thousands of
+  // blocks). Matches both ":Product" (old) and "schema:Product" (v30+).
+  const escaped = [...targetTypes].map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const domainRe = new RegExp(`(?:schema:)?:?(?:${escaped.join("|")})\\b`);
   for (const { name, text } of blocks) {
     if (!text.includes("a rdf:Property")) continue;
     if (FIELD_EXCLUSIONS.has(name)) continue;
@@ -148,8 +153,7 @@ function extractProperties(blocks, targetTypes) {
     // domainIncludes ends at the next ";" (next predicate) or end of block
     const diEnd = text.indexOf(";", diStart);
     const domainStr = diEnd > -1 ? text.slice(diStart, diEnd) : text.slice(diStart);
-    // Match both ":Product" (old) and "schema:Product" (v30+)
-    if (![...targetTypes].some((t) => new RegExp(`(?:schema:)?:?${t}\\b`).test(domainStr))) continue;
+    if (!domainRe.test(domainStr)) continue;
     const tripleMatch = text.match(/rdfs:comment\s+"""([\s\S]*?)"""/);
     const singleMatch = text.match(/rdfs:comment\s+"((?:[^"\\]|\\.)*)"/);
     const raw = tripleMatch ? tripleMatch[1] : singleMatch ? singleMatch[1] : "";

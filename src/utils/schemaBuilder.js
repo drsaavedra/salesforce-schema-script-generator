@@ -90,6 +90,38 @@ export function applySelectedField(graph, field, mapping) {
 }
 
 /**
+ * Assembles the full Product JSON-LD graph from the selected fields and custom
+ * variations. Shared by ScriptOutput (script generation) and SchemaPreviewModal
+ * (preview tree) so the two can never diverge.
+ *
+ * Perf: builds a fieldId→field Map once (O(fields)) instead of calling
+ * fields.find() per selected field (which would be O(selected × fields)).
+ *
+ * @param {Set}    selectedFields  - Set of selected field ids.
+ * @param {Array}  fields          - All FieldDescriptors.
+ * @param {object} mappings        - fieldId → mapping object.
+ * @param {Array}  customVariations - Array of { id, name, expression } objects.
+ * @returns {object} the assembled JSON-LD graph.
+ */
+export function buildProductGraph(selectedFields, fields, mappings, customVariations) {
+  const graph = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+  };
+
+  const fieldsById = new Map(fields.map(f => [f.id, f]));
+  for (const fieldId of selectedFields) {
+    const field = fieldsById.get(fieldId);
+    if (field) {
+      applySelectedField(graph, field, mappings[fieldId] || {});
+    }
+  }
+
+  applyCustomVariations(graph, customVariations);
+  return graph;
+}
+
+/**
  * Appends additionalProperty entries from customVariations to the graph.
  * @param {object} graph            - The JSON-LD graph object (mutated).
  * @param {Array}  customVariations - Array of { id, name, expression } objects.

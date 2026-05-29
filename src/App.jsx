@@ -93,12 +93,15 @@ export default function App() {
     setCustomVariations([]);
   }
 
-  function handleMappingChange(fieldId, updater) {
+  // Stable across renders (only closes over setMappings, which is stable). This
+  // referential stability is what lets the memoized field rows in MappingEditor
+  // skip re-rendering when an unrelated field is edited.
+  const handleMappingChange = useCallback((fieldId, updater) => {
     setMappings(prev => ({
       ...prev,
       [fieldId]: typeof updater === 'function' ? updater(prev[fieldId] ?? {}) : updater,
     }));
-  }
+  }, []);
 
   function handleReset() {
     const newMappings = {};

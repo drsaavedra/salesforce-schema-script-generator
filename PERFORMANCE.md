@@ -4,6 +4,21 @@ A standing record of the performance review of the React build (vanilla JS → R
 
 **Review verdict:** performance-sound for its data scale. 0 High · 2 Medium · 12 Low. No correctness-affecting performance bugs, no memory leaks, no problematic dependencies.
 
+## Implementation status (2026-05-29)
+
+The actionable findings were implemented as a deliberate learning exercise (even though most are below the threshold that would normally justify the added complexity). The patterns below are now in the codebase and worth studying as worked examples:
+
+| Finding | Status | What was done |
+|---|---|---|
+| M1 — MappingEditor keystroke re-render | ✅ Implemented | `TreeFieldRenderer` / `FlatFieldRenderer` / `FlatAccordionField` wrapped in `React.memo`; `handleMappingChange` + `handleAccordionToggle` are `useCallback`; `selected` is `useMemo`; shared `EMPTY_MAPPING` keeps the `mapping` prop stable. Editing one field now re-renders only that field's row. |
+| M2 — ScriptOutput derived-state recompute | ✅ Implemented | `scriptText` and `warnings` are `useMemo`'d on their real inputs, so `copyStatus`/breadcrumb-toggle re-renders skip the rebuild. |
+| L4 — FieldList filter | ✅ Implemented | `filtered` is `useMemo([fields, query])`. |
+| L8 — repeated `fields.find` | ✅ Implemented | Extracted `buildProductGraph` into `schemaBuilder.js` (used by both ScriptOutput and SchemaPreviewModal) with a `fieldId→field` Map; `buildWarnings` uses a Map too. O(selected × fields) → O(selected + fields). |
+| L12 — regex compiled per block | ✅ Implemented | `extractProperties` builds one alternation `RegExp` before the loop instead of `new RegExp` per type per block. |
+| L1, L2, L3, L5, L6, L7, L9, L10, L11 | ➖ No-op | These were already optimal or "fix only alongside M1"; nothing to change. The L2/L3 inline-closure concerns are now moot because the field rows are memoized and their callbacks are stable. |
+
+**Key lesson:** `React.memo` only pays off when every prop is referentially stable. The M1 fix is really *four* coordinated changes (`memo` + `useCallback` + `useMemo` + the shared `EMPTY_MAPPING`); skip any one and the memo silently does nothing. Verify with the React DevTools Profiler ("Highlight updates" / "why did this render") before and after — that's the proof the optimization works.
+
 ---
 
 ## Data-scale context (this governs every severity call)

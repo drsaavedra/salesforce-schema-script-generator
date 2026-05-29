@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export default function FieldList({
   fields,
@@ -15,13 +15,18 @@ export default function FieldList({
 
   const query = searchQuery.trim().toLowerCase();
 
-  const filtered = query
-    ? fields.filter(f =>
-        f.label.toLowerCase().includes(query) ||
-        f.path.toLowerCase().includes(query) ||
-        (f.description && f.description.toLowerCase().includes(query))
-      )
-    : fields;
+  // Recompute the filtered list only when the field set or the query changes —
+  // not on every keystroke-unrelated re-render of this component.
+  const filtered = useMemo(
+    () => query
+      ? fields.filter(f =>
+          f.label.toLowerCase().includes(query) ||
+          f.path.toLowerCase().includes(query) ||
+          (f.description && f.description.toLowerCase().includes(query))
+        )
+      : fields,
+    [fields, query]
+  );
 
 
   function handleSelectAllMatching() {
