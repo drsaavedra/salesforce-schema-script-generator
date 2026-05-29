@@ -1,100 +1,10 @@
 import { useState } from 'react';
-import { DEFAULT_OFFER } from '../constants.js';
-import { RAW_EXPRESSION_KEY, rawExpression } from '../utils/rawExpression.js';
+import { RAW_EXPRESSION_KEY } from '../utils/rawExpression.js';
+import { applySelectedField, applyCustomVariations } from '../utils/schemaBuilder.js';
 
 // ── Raw expression helpers ────────────────────────────────────────────────────
 
 const RAW_TOKEN_PREFIX = '__SCHEMA_GENERATOR_RAW_';
-
-// ── Business logic (no DOM/React dependencies) ────────────────────────────────
-
-/**
- * Builds a graph node for a single selected field.
- * @param {object} graph   - The JSON-LD graph object being assembled (mutated).
- * @param {object} field   - FieldDescriptor from schema-parser.
- * @param {object} mapping - The mapping object for this field (from mappings state).
- */
-function applySelectedField(graph, field, mapping) {
-  const value = mapping.expression || '';
-
-  if (field.valueType === 'offer') {
-    const offer = {
-      '@type': mapping.offerType || DEFAULT_OFFER.offerType,
-      priceCurrency: mapping.currencyExpression || '',
-    };
-    if (mapping.priceExpression) {
-      offer.price = mapping.priceExpression;
-    }
-    if (mapping.sellerName || mapping.sellerUrl) {
-      offer.seller = {
-        '@type': mapping.sellerType || DEFAULT_OFFER.sellerType,
-      };
-      if (mapping.sellerName) {
-        offer.seller.name = mapping.sellerName;
-      }
-      if (mapping.sellerUrl) {
-        offer.seller.url = mapping.sellerUrl;
-      }
-    }
-    graph.offers = offer;
-    return;
-  }
-
-  if (field.valueType === 'brand') {
-    graph.brand = {
-      '@type': mapping.type || 'Brand',
-      name: value,
-    };
-    return;
-  }
-
-  if (field.valueType === 'organization') {
-    graph[field.path.split('.')[0]] = {
-      '@type': mapping.type || 'Organization',
-      name: value,
-    };
-    return;
-  }
-
-  if (field.valueType === 'imageArray' || field.valueType === 'array') {
-    graph[field.path] = [value];
-    return;
-  }
-
-  if (field.valueType === 'commaSeparatedArray') {
-    const parts = value.split(',').map(s => s.trim()).filter(Boolean);
-    if (!parts.length) return;
-    graph[field.path] = parts.length === 1 ? parts[0] : parts;
-    return;
-  }
-
-  if (field.valueType === 'propertyValue') {
-    graph.additionalProperty = (mapping.entries || [])
-      .filter(e => e.label || e.expression)
-      .map(e => ({
-        '@type': 'PropertyValue',
-        name: e.label || 'Property',
-        value: e.expression || '',
-      }));
-    return;
-  }
-
-  if (field.valueType === 'raw') {
-    // Skip empty raw fields — emitting null is invalid schema.org
-    if (value) graph[field.path] = rawExpression(value);
-    return;
-  }
-
-  if (field.valueType === 'number') {
-    if (!value) return;
-    const num = Number(value);
-    // Non-numeric values (e.g. merge expressions) emit unquoted via rawExpression
-    graph[field.path] = Number.isNaN(num) ? rawExpression(value) : num;
-    return;
-  }
-
-  graph[field.path] = value;
-}
 
 /**
  * JSON.stringify with token replacement for raw expressions.
@@ -120,27 +30,6 @@ function graphToJsonWithExpressions(graph) {
       output.replace(`"${RAW_TOKEN_PREFIX}${index}__"`, () => value),
     json
   );
-}
-
-/**
- * Appends additionalProperty entries from customVariations to the graph.
- * @param {object} graph            - The JSON-LD graph object (mutated).
- * @param {Array}  customVariations - Array of { id, name, expression } objects.
- */
-function applyCustomVariations(graph, customVariations) {
-  const entries = customVariations
-    .filter(v => v.name)
-    .map(v => ({
-      '@type': 'PropertyValue',
-      name: v.name,
-      value: v.expression || '',
-    }));
-  if (!entries.length) return;
-  if (Array.isArray(graph.additionalProperty)) {
-    graph.additionalProperty = [...graph.additionalProperty, ...entries];
-  } else {
-    graph.additionalProperty = entries;
-  }
 }
 
 /**
@@ -325,8 +214,8 @@ export default function ScriptOutput({
         const textarea = document.querySelector('#scriptOutput');
         if (textarea) {
           textarea.select();
-          document.execCommand('copy');
-          setCopyStatus('Copied.');
+          const ok = document.execCommand('copy');
+          setCopyStatus(ok ? 'Copied.' : 'Copy failed — select the text and copy manually.');
         } else {
           setCopyStatus('Copy failed — select the text and copy manually.');
         }

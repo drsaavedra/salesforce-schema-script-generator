@@ -50,7 +50,8 @@ export default function VariationAttrsPanel({ entries, onEntriesChange }) {
       </p>
       <div className="custom-variation-list">
         {entries.map(entry => {
-          const exprPlaceholder = `{!Record.ProductAttributes.${entry.name || 'FieldName'}__c}`;
+          const safeName = (entry.name || '').replace(/\W+/g, '_').replace(/^_+|_+$/g, '') || 'FieldName';
+          const exprPlaceholder = `{!Record.ProductAttributes.${safeName}__c}`;
           const isFocused = focusedExprId === entry.id;
           const isEmpty = !entry.expression;
           const isWithinPlaceholder = !isEmpty
@@ -69,7 +70,8 @@ export default function VariationAttrsPanel({ entries, onEntriesChange }) {
             if (isPartial) {
               e.preventDefault();
               const apiName = entry.expression.replace(/^Record\./, '');
-              handleExpressionChange(entry.id, `{!Record.ProductAttributes.${apiName}}`);
+              const suffix = apiName.endsWith('__c') ? '' : '__c';
+              handleExpressionChange(entry.id, `{!Record.ProductAttributes.${apiName}${suffix}}`);
             }
           }
 

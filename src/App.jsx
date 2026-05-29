@@ -90,6 +90,7 @@ export default function App() {
     const recommended = fields.filter(f => f.defaultSelected);
     setSelectedFields(new Set(recommended.map(f => f.id)));
     setMappings(buildDefaultMappings(recommended));
+    setCustomVariations([]);
   }
 
   function handleMappingChange(fieldId, updater) {
