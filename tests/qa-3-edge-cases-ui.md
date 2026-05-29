@@ -131,7 +131,7 @@ Trace `handleReset()` in `App.jsx` lines 101–109.
 **Expected:** `setCustomVariations([])` is called — wipes all variation entries including their names. After Reset, the Variation Attributes panel shows zero rows. **Note:** This differs from vanilla behavior (which preserved names but cleared expressions). In React, Reset is a hard reset of all Step 2 state.
 
 ### TC3-29 — Tab-to-fill: Tree view input (empty, within-placeholder, and partial)
-`TreeInput` component in `MappingEditor.jsx`.  
+`TreeInput` component in `MappingEditor.jsx` — the Tab-to-fill logic lives in the shared `useTabToFill` hook (`src/hooks/useTabToFill.js`); `TreeInput` calls it with the default `expandPartial` (wraps a bare API name as `{!Record.<apiName>}`).  
 **Expected — three trigger paths:**
 
 **Path 1 (empty → fill placeholder):** Input is empty AND placeholder starts with `{!` AND input is focused → hint shows "Tab ↹ to fill". Tab calls `onChange(placeholder)` (e.g. `{!Record.Name}`).
@@ -144,17 +144,17 @@ Trace `handleReset()` in `App.jsx` lines 101–109.
 
 ### TC3-30 — Tab-to-fill: Flat form view input (empty, within-placeholder, and partial)
 `FlatInput` component in `MappingEditor.jsx`.  
-**Expected:** Identical three-path behavior to TC3-29 — same `isWithinPlaceholder` prefix guard, same `isPartial` identifier regex, same `Record.` prefix strip, same hint display. The Tab-to-fill logic is intentionally duplicated in `TreeInput`, `FlatInput`, and `VariationAttrsPanel` (a `useTabFill` hook extraction is deferred).
+**Expected:** Identical three-path behavior to TC3-29 — same `isWithinPlaceholder` prefix guard, same `isPartial` identifier regex, same `Record.` prefix strip, same hint display. `TreeInput`, `FlatInput`, and `VariationAttrsPanel`'s row now share a single source of truth: the `useTabToFill` hook in `src/hooks/useTabToFill.js`. Tree/Flat use the default `expandPartial`; the variation panel injects a custom one (see TC3-31).
 
 ### TC3-31 — Tab-to-fill: Variation Attributes panel expression input (empty, within-placeholder, and partial)
-`VariationAttrsPanel.jsx` (inside the `entries.map()` callback).  
+`VariationAttrsPanel.jsx` — each row is the `VariationRow` component, which calls the shared `useTabToFill` hook (`src/hooks/useTabToFill.js`) with a custom `expandPartial` (`expandVariationPartial`). Extracting `VariationRow` as its own component is what allows the hook to be called per row (hooks cannot run inside a `.map()` callback). Row focus state lives inside the hook, so the panel no longer tracks a `focusedExprId`.  
 **Expected — three trigger paths:**
 
 **Path 1 (empty):** Expression is empty AND focused → hint shows. Tab fills with `exprPlaceholder` (`{!Record.ProductAttributes.FieldName__c}` or name-based variant).
 
 **Path 2 (within placeholder):** Expression is a non-empty prefix of `exprPlaceholder` (e.g. user typed `{`, `{!R`) → `isWithinPlaceholder` is true → hint shows. Tab fills with `exprPlaceholder`. This prevents `{` from being wrapped as `{!Record.ProductAttributes.{}`.
 
-**Path 3 (bare API name → wrap):** Expression matches `/^[\w$]+$/` (e.g. `Angle__c`) AND focused → hint shows. Tab wraps to `{!Record.ProductAttributes.${apiName}}` where `apiName = expression.replace(/^Record\./, '')`. Result: `{!Record.ProductAttributes.Angle__c}`. The `ProductAttributes` relationship is hardcoded here (unlike Tree/Flat) because all variation attributes are bound to the `ProductAttributes` relationship field — they are never top-level product fields.
+**Path 3 (bare API name → wrap):** Expression matches `/^[\w$]+$/` (e.g. `Angle__c`) AND focused → hint shows. `expandVariationPartial` wraps to `{!Record.ProductAttributes.${apiName}${suffix}}` where `apiName = expression.replace(/^Record\./, '')` and `suffix` is `__c` unless the name already contains `__`. Result: `{!Record.ProductAttributes.Angle__c}`. The `ProductAttributes` relationship is hardcoded here (unlike Tree/Flat) because all variation attributes bind to it. **Guard:** if `apiName.toLowerCase() === 'productattributes'`, `expandVariationPartial` returns `null` and the hook leaves the value unchanged (prevents `{!Record.ProductAttributes.ProductAttributes__c}`).
 
 ### TC3-32 — Variation Attributes card visual contract
 Trace `src/styles.css` rules for `.variation-attrs-panel` and `.variation-attrs-heading`.  
@@ -166,3 +166,11 @@ Trace `src/styles.css` rules for `.variation-attrs-panel` and `.variation-attrs-
 ### TC3-33 — Info button toggles disclosure below header row
 `VariationAttrsPanel.jsx` lines 27–47.  
 **Expected:** The `?` trigger button is inside `.variation-attrs-card-header` (a flex row with the `<h4>`). Clicking toggles `showInfo` via `useState`. When `showInfo` is true, `.variation-attrs-info-body` renders **as a sibling element** to the card header — i.e., outside the flex header `<div>`, **below** the heading row in the document flow. The "Custom variation attributes" text is never pushed sideways or wrapped because the info body is not inside the header row. The button has `aria-expanded={showInfo}` and `aria-label="Show schema.org guidance"`.
+
+### TC3-34 — Step nav: back-only navigation
+`StepsNav.jsx` derives `isDone` (`n < currentStep`), `isCurrent` (`n === currentStep`), and `isFuture` (`n > currentStep`) per step. Each step button sets `disabled={isFuture}` and `onClick={() => { if (isDone) onGoToStep(n); }}`.  
+**Expected:**
+- **Completed steps** (`isDone`) are clickable and navigate back via `onGoToStep(n)`. They get the `.is-done` class, which in `styles.css` sets `cursor: pointer` and a color-shift hover (`.step-nav-btn.is-done:hover`).
+- **Current step** is neither disabled nor clickable — `onClick` is a no-op (`isDone` is false), and it keeps `aria-current="step"`.
+- **Future steps** (`isFuture`) have the native `disabled` attribute, so they cannot be clicked or focused. `styles.css` `.step-nav-btn:disabled` sets `opacity: 0.55` and `cursor: default`.
+- **Constraint satisfied:** from Step 1, Steps 2 and 3 are future → disabled, so a user cannot skip ahead to Step 3 before producing output. Forward progress remains gated behind the Next/Finish buttons. The global `button:hover` background is neutralized for `.step-nav-btn` so the nav does not look like a row of pressable cards.

@@ -7,8 +7,9 @@ export default function StepsNav({ currentStep, onGoToStep }) {
     <nav className="steps-nav" aria-label="Steps">
       {STEP_LABELS.map((label, i) => {
         const n = i + 1;
-        const isDone = n < currentStep;
+        const isDone = n < currentStep;     // completed → navigable (back-only)
         const isCurrent = n === currentStep;
+        const isFuture = n > currentStep;   // not yet reached → disabled, no skipping ahead
         return (
           <Fragment key={n}>
             {i > 0 && <span className="step-divider" aria-hidden="true" />}
@@ -16,7 +17,8 @@ export default function StepsNav({ currentStep, onGoToStep }) {
               type="button"
               className={'step-nav-btn' + (isDone ? ' is-done' : '')}
               aria-current={isCurrent ? 'step' : undefined}
-              onClick={() => onGoToStep(n)}
+              disabled={isFuture}
+              onClick={() => { if (isDone) onGoToStep(n); }}
             >
               <span className="step-num">{n}</span>
               <span className="step-label">{label}</span>

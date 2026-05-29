@@ -147,8 +147,15 @@ h2 {
   display: flex;
   gap: 8px;
   padding: 6px 10px;
-  pointer-events: none;
   user-select: none;
+}
+
+/* Back-only navigation: completed steps (.is-done) are clickable; the current
+   step is a no-op; future steps are disabled. Neutralize the global button
+   hover background and use a color shift on clickable steps instead. */
+.step-nav-btn:hover:not(:disabled) {
+  background: none;
+  border-color: var(--line);
 }
 
 .step-nav-btn[aria-current="step"] {
@@ -157,6 +164,17 @@ h2 {
 
 .step-nav-btn.is-done {
   color: var(--ink);
+  cursor: pointer;
+}
+
+.step-nav-btn.is-done:hover {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+}
+
+.step-nav-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .step-num {
@@ -994,6 +1012,9 @@ kbd {
 .tree-val-other  { color: var(--muted); }
 
 /* ── Responsive ── */
+/* NOTE: 640px is the mobile breakpoint. Keep in sync with MOBILE_BREAKPOINT in
+   src/constants.js (MappingEditor's matchMedia view-switch reads it from there).
+   CSS media queries cannot reference JS constants, so the value is duplicated here. */
 @media (max-width: 640px) {
   .app-header {
     align-items: flex-start;

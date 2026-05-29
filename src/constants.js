@@ -14,6 +14,14 @@ export const SCHEMA_REGISTRY = {
   },
 };
 
+// ── Responsive breakpoint ─────────────────────────────────────────────────────
+// Single source of truth for the mobile breakpoint. The @media queries in
+// styles.css MUST be kept in sync with this value — CSS media queries cannot read
+// JS constants or CSS custom properties, so the 640px literal is duplicated there
+// intentionally. If you change this, update styles.css too (search "max-width: 640px").
+export const MOBILE_BREAKPOINT = 640;
+export const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT}px)`;
+
 // ── @type picklist options ────────────────────────────────────────────────────
 export const OFFER_TYPES        = ["Offer", "AggregateOffer"];
 export const SELLER_TYPES       = ["Organization", "Corporation", "LocalBusiness", "Person"];

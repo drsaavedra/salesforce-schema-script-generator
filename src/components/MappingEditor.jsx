@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { OFFER_TYPES, SELLER_TYPES, BRAND_TYPES, ORGANIZATION_TYPES, TYPE_HINT_DETAILS, DEFAULT_OFFER } from '../constants.js';
+import { OFFER_TYPES, SELLER_TYPES, BRAND_TYPES, ORGANIZATION_TYPES, TYPE_HINT_DETAILS, DEFAULT_OFFER, MOBILE_MEDIA_QUERY } from '../constants.js';
+import { useTabToFill } from '../hooks/useTabToFill.js';
 
 // ── Shared primitive helpers ──────────────────────────────────────────────────
 
@@ -16,30 +17,7 @@ function TypeTag({ hint }) {
 }
 
 function TreeInput({ id, value, disabled, onChange, placeholder }) {
-  const [isFocused, setIsFocused] = useState(false);
-  const isMergeExpression = placeholder?.startsWith('{!') ?? false;
-  const isEmpty = !value;
-  const isWithinPlaceholder = !isEmpty && isMergeExpression
-    && value.length < placeholder.length
-    && placeholder.startsWith(value);
-  const isPartial = !isEmpty && !disabled && /^[\w$]+$/.test(value);
-  const showTabHint = !disabled && isFocused && (
-    (isEmpty && isMergeExpression) || isWithinPlaceholder || isPartial
-  );
-
-  function handleKeyDown(e) {
-    if (e.key !== 'Tab' || e.shiftKey || disabled) return;
-    if ((isEmpty && isMergeExpression) || isWithinPlaceholder) {
-      e.preventDefault();
-      onChange(placeholder);
-      return;
-    }
-    if (isPartial) {
-      e.preventDefault();
-      const apiName = value.replace(/^Record\./, '');
-      onChange(`{!Record.${apiName}}`);
-    }
-  }
+  const { showTabHint, onFocus, onBlur, onKeyDown } = useTabToFill({ value, placeholder, disabled, onChange });
 
   return (
     <span className="input-with-hint">
@@ -52,9 +30,9 @@ function TreeInput({ id, value, disabled, onChange, placeholder }) {
         autoComplete="off"
         spellCheck={false}
         placeholder={disabled ? undefined : placeholder}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
         onChange={e => onChange(e.target.value)}
       />
       {showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
@@ -356,30 +334,7 @@ function TreeObjectField({ field, mapping, defaultType, typeOptions, onMappingCh
 // ── Flat form field renderers (mobile ≤640px) ─────────────────────────────────
 
 function FlatInput({ id, label, value, disabled, placeholder, onChange }) {
-  const [isFocused, setIsFocused] = useState(false);
-  const isMergeExpression = placeholder?.startsWith('{!') ?? false;
-  const isEmpty = !value;
-  const isWithinPlaceholder = !isEmpty && isMergeExpression
-    && value.length < placeholder.length
-    && placeholder.startsWith(value);
-  const isPartial = !isEmpty && !disabled && /^[\w$]+$/.test(value);
-  const showTabHint = !disabled && isFocused && (
-    (isEmpty && isMergeExpression) || isWithinPlaceholder || isPartial
-  );
-
-  function handleKeyDown(e) {
-    if (e.key !== 'Tab' || e.shiftKey || disabled) return;
-    if ((isEmpty && isMergeExpression) || isWithinPlaceholder) {
-      e.preventDefault();
-      onChange(placeholder);
-      return;
-    }
-    if (isPartial) {
-      e.preventDefault();
-      const apiName = value.replace(/^Record\./, '');
-      onChange(`{!Record.${apiName}}`);
-    }
-  }
+  const { showTabHint, onFocus, onBlur, onKeyDown } = useTabToFill({ value, placeholder, disabled, onChange });
 
   return (
     <div className="mapping-row">
@@ -393,9 +348,9 @@ function FlatInput({ id, label, value, disabled, placeholder, onChange }) {
           placeholder={placeholder}
           autoComplete="off"
           spellCheck={false}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onKeyDown={handleKeyDown}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
           onChange={e => onChange(e.target.value)}
         />
         {showTabHint && <span className="tab-fill-hint">Tab ↹ to fill</span>}
@@ -609,11 +564,11 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
 // ── Main MappingEditor component ──────────────────────────────────────────────
 
 export default function MappingEditor({ selectedFields, fields, mappings, onMappingChange, onReset }) {
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_MEDIA_QUERY).matches);
   const [closedMappings, setClosedMappings] = useState(new Set());
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
+    const mq = window.matchMedia(MOBILE_MEDIA_QUERY);
     const handler = e => setIsMobile(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
