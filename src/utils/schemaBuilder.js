@@ -13,12 +13,10 @@ export function applySelectedField(graph, field, mapping) {
   if (field.valueType === 'offer') {
     const offer = {
       '@type': mapping.offerType || DEFAULT_OFFER.offerType,
+      priceCurrency: mapping.currencyExpression || '',
     };
     if (mapping.priceExpression) {
       offer.price = mapping.priceExpression;
-    }
-    if (mapping.currencyExpression) {
-      offer.priceCurrency = mapping.currencyExpression;
     }
     if (mapping.sellerName || mapping.sellerUrl) {
       offer.seller = {

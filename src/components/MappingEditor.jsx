@@ -498,6 +498,16 @@ function FlatOfferField({ field, mapping, onMappingChange }) {
           }))}
         />
       </div>
+      <div className="mapping-row">
+        <label htmlFor={`${field.id}-sellerType`}>Seller type</label>
+        <select
+          id={`${field.id}-sellerType`}
+          value={mapping.sellerType || DEFAULT_OFFER.sellerType}
+          onChange={e => onMappingChange(field.id, m => ({ ...m, sellerType: e.target.value }))}
+        >
+          {SELLER_TYPES.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+      </div>
       <FlatInput
         id={`${field.id}-sellerName`}
         label="Seller name"

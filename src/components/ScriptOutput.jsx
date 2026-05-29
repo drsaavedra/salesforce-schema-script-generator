@@ -88,12 +88,6 @@ function buildWarnings(selectedFields, fields, mappings, customVariations) {
       if (!String(mapping.currencyExpression || '').trim()) {
         warnings.push('Offer: currency expression is empty.');
       }
-      if (mapping.sellerName && !String(mapping.sellerUrl || '').trim()) {
-        warnings.push('Offer: seller name provided but seller URL is empty.');
-      }
-      if (mapping.sellerUrl && !String(mapping.sellerName || '').trim()) {
-        warnings.push('Offer: seller URL provided but seller name is empty.');
-      }
     } else if (field.valueType === 'expression' || field.valueType === 'raw') {
       if (!String(mapping.expression || '').trim()) {
         warnings.push(`${field.label}: expression is empty.`);
