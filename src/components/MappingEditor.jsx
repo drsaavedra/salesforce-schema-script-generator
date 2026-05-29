@@ -242,7 +242,7 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
         <span className="tree-brace">[</span>
       </div>
       <div className="tree-children">
-        {mapping.entries.map((entry, idx) => (
+        {(mapping.entries || []).map((entry, idx) => (
           <div key={entry.id}>
             <div className="tree-row"><span className="tree-brace">{"{"}</span></div>
             <div className="tree-children">
@@ -258,7 +258,7 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
                   id={`tree-${field.id}-name-${idx}`}
                   value={entry.label || ''}
                   onChange={val => onMappingChange(field.id, m => {
-                    const entries = m.entries.map((e, i) => i === idx ? { ...e, label: val } : e);
+                    const entries = (m.entries || []).map((e, i) => i === idx ? { ...e, label: val } : e);
                     return { ...m, entries };
                   })}
                 />
@@ -271,7 +271,7 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
                   value={entry.expression || ''}
                   placeholder="{!Record.FieldApiName}"
                   onChange={val => onMappingChange(field.id, m => {
-                    const entries = m.entries.map((e, i) => i === idx ? { ...e, expression: val } : e);
+                    const entries = (m.entries || []).map((e, i) => i === idx ? { ...e, expression: val } : e);
                     return { ...m, entries };
                   })}
                 />
@@ -279,13 +279,13 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
             </div>
             <div className="tree-row">
               <span className="tree-brace">{"}"}</span>
-              {mapping.entries.length > 1 && (
+              {(mapping.entries || []).length > 1 && (
                 <button
                   type="button"
                   className="btn-remove tree-array-btn"
                   onClick={() => onMappingChange(field.id, m => ({
                     ...m,
-                    entries: m.entries.filter((_, i) => i !== idx),
+                    entries: (m.entries || []).filter((_, i) => i !== idx),
                   }))}
                 >
                   Remove
@@ -300,7 +300,7 @@ function TreePropertyValueField({ field, mapping, onMappingChange }) {
             className="btn-add-entry tree-array-btn"
             onClick={() => onMappingChange(field.id, m => ({
               ...m,
-              entries: [...m.entries, { id: crypto.randomUUID(), label: '', expression: '' }],
+              entries: [...(m.entries || []), { id: crypto.randomUUID(), label: '', expression: '' }],
             }))}
           >
             + Add property
@@ -514,20 +514,47 @@ function FlatOfferField({ field, mapping, onMappingChange }) {
   );
 }
 
+function FlatObjectField({ field, mapping, defaultType, typeOptions, onMappingChange }) {
+  const hasTypeChoice = typeOptions && typeOptions.length > 1;
+  return (
+    <>
+      <FlatInput
+        id={`${field.id}-expression`}
+        label={`${field.label} name`}
+        value={mapping.expression || ''}
+        placeholder="{!Record.FieldApiName}"
+        onChange={val => onMappingChange(field.id, m => ({ ...m, expression: val }))}
+      />
+      {hasTypeChoice && (
+        <div className="mapping-row">
+          <label htmlFor={`${field.id}-type`}>Type</label>
+          <select
+            id={`${field.id}-type`}
+            value={mapping.type || defaultType}
+            onChange={e => onMappingChange(field.id, m => ({ ...m, type: e.target.value }))}
+          >
+            {typeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </div>
+      )}
+    </>
+  );
+}
+
 function FlatPropertyValueField({ field, mapping, onMappingChange }) {
   return (
     <>
-      {mapping.entries.map((entry, idx) => (
+      {(mapping.entries || []).map((entry, idx) => (
         <div key={entry.id} className="property-group">
           <div className="property-group-header">
             <span>Property {idx + 1}</span>
-            {mapping.entries.length > 1 && (
+            {(mapping.entries || []).length > 1 && (
               <button
                 type="button"
                 className="btn-remove"
                 onClick={() => onMappingChange(field.id, m => ({
                   ...m,
-                  entries: m.entries.filter((_, i) => i !== idx),
+                  entries: (m.entries || []).filter((_, i) => i !== idx),
                 }))}
               >
                 Remove
@@ -539,7 +566,7 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
             label="Property name"
             value={entry.label || ''}
             onChange={val => onMappingChange(field.id, m => {
-              const entries = m.entries.map((e, i) => i === idx ? { ...e, label: val } : e);
+              const entries = (m.entries || []).map((e, i) => i === idx ? { ...e, label: val } : e);
               return { ...m, entries };
             })}
           />
@@ -549,7 +576,7 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
             value={entry.expression || ''}
             placeholder="{!Record.FieldApiName}"
             onChange={val => onMappingChange(field.id, m => {
-              const entries = m.entries.map((e, i) => i === idx ? { ...e, expression: val } : e);
+              const entries = (m.entries || []).map((e, i) => i === idx ? { ...e, expression: val } : e);
               return { ...m, entries };
             })}
           />
@@ -560,7 +587,7 @@ function FlatPropertyValueField({ field, mapping, onMappingChange }) {
         className="btn-add-entry"
         onClick={() => onMappingChange(field.id, m => ({
           ...m,
-          entries: [...m.entries, { id: crypto.randomUUID(), label: '', expression: '' }],
+          entries: [...(m.entries || []), { id: crypto.randomUUID(), label: '', expression: '' }],
         }))}
       >
         + Add another property
@@ -633,6 +660,12 @@ export default function MappingEditor({ selectedFields, fields, mappings, onMapp
             const mapping = mappings[field.id] || {};
             const needsAccordion = field.valueType === 'offer' || field.valueType === 'propertyValue';
             if (!needsAccordion) {
+              if (field.valueType === 'brand') {
+                return <FlatObjectField key={field.id} field={field} mapping={mapping} defaultType="Brand" typeOptions={BRAND_TYPES} onMappingChange={onMappingChange} />;
+              }
+              if (field.valueType === 'organization') {
+                return <FlatObjectField key={field.id} field={field} mapping={mapping} defaultType="Organization" typeOptions={ORGANIZATION_TYPES} onMappingChange={onMappingChange} />;
+              }
               return <FlatGenericField key={field.id} field={field} mapping={mapping} onMappingChange={onMappingChange} />;
             }
             const isClosed = closedMappings.has(field.id);

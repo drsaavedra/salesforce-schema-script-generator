@@ -1,11 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { DEFAULT_OFFER } from '../constants.js';
-
-// ── Raw expression helpers ────────────────────────────────────────────────────
-
-function rawExpression(value) {
-  return { __rawExpression: value };
-}
+import { RAW_EXPRESSION_KEY, rawExpression } from '../utils/rawExpression.js';
 
 // ── Business logic (duplicated from ScriptOutput for now; future: extract to src/utils/schemaBuilder.js) ──
 
@@ -64,6 +59,7 @@ function applySelectedFieldToGraph(graph, field, mapping) {
 
   if (field.valueType === 'commaSeparatedArray') {
     const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return;
     graph[field.path] = parts.length === 1 ? parts[0] : parts;
     return;
   }
@@ -142,8 +138,8 @@ function buildPreviewGraph(selectedFields, fields, mappings, customVariations) {
 
 function JsonTreeNode({ value }) {
   // Handle raw expression placeholder
-  if (value !== null && typeof value === 'object' && '__rawExpression' in value) {
-    return <span className="tree-val-string">"{value.__rawExpression}"</span>;
+  if (value !== null && typeof value === 'object' && RAW_EXPRESSION_KEY in value) {
+    return <span className="tree-val-string">"{value[RAW_EXPRESSION_KEY]}"</span>;
   }
 
   if (Array.isArray(value)) {

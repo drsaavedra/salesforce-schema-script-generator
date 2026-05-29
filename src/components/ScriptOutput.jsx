@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { DEFAULT_OFFER } from '../constants.js';
+import { RAW_EXPRESSION_KEY, rawExpression } from '../utils/rawExpression.js';
 
 // ── Raw expression helpers ────────────────────────────────────────────────────
 
 const RAW_TOKEN_PREFIX = '__SCHEMA_GENERATOR_RAW_';
-
-function rawExpression(value) {
-  return { __rawExpression: value };
-}
 
 // ── Business logic (no DOM/React dependencies) ────────────────────────────────
 
@@ -66,6 +63,7 @@ function applySelectedField(graph, field, mapping) {
 
   if (field.valueType === 'commaSeparatedArray') {
     const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return;
     graph[field.path] = parts.length === 1 ? parts[0] : parts;
     return;
   }
@@ -107,9 +105,9 @@ function graphToJsonWithExpressions(graph) {
   const json = JSON.stringify(
     graph,
     (key, value) => {
-      if (value && typeof value === 'object' && '__rawExpression' in value) {
+      if (value && typeof value === 'object' && RAW_EXPRESSION_KEY in value) {
         const token = `${RAW_TOKEN_PREFIX}${rawValues.length}__`;
-        rawValues.push(value.__rawExpression || 'null');
+        rawValues.push(value[RAW_EXPRESSION_KEY] || 'null');
         return token;
       }
       return value;
@@ -200,6 +198,12 @@ function buildWarnings(selectedFields, fields, mappings, customVariations) {
       }
       if (!String(mapping.currencyExpression || '').trim()) {
         warnings.push('Offer: currency expression is empty.');
+      }
+      if (mapping.sellerName && !String(mapping.sellerUrl || '').trim()) {
+        warnings.push('Offer: seller name provided but seller URL is empty.');
+      }
+      if (mapping.sellerUrl && !String(mapping.sellerName || '').trim()) {
+        warnings.push('Offer: seller URL provided but seller name is empty.');
       }
     } else if (field.valueType === 'expression' || field.valueType === 'raw') {
       if (!String(mapping.expression || '').trim()) {
@@ -322,8 +326,10 @@ export default function ScriptOutput({
         if (textarea) {
           textarea.select();
           document.execCommand('copy');
+          setCopyStatus('Copied.');
+        } else {
+          setCopyStatus('Copy failed — select the text and copy manually.');
         }
-        setCopyStatus('Copied.');
       } catch {
         setCopyStatus('Copy failed — select the text and copy manually.');
       }

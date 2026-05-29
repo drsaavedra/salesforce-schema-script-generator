@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { loadSchemaFields } from './schema-parser.js';
 import { DEFAULT_OFFER } from './constants.js';
 import StepsNav from './components/StepsNav.jsx';
@@ -95,7 +95,7 @@ export default function App() {
   function handleMappingChange(fieldId, updater) {
     setMappings(prev => ({
       ...prev,
-      [fieldId]: typeof updater === 'function' ? updater(prev[fieldId]) : updater,
+      [fieldId]: typeof updater === 'function' ? updater(prev[fieldId] ?? {}) : updater,
     }));
   }
 
@@ -108,6 +108,11 @@ export default function App() {
     setMappings(newMappings);
     setCustomVariations([]);
   }
+
+  const handleModalClose = useCallback(() => {
+    setIsPreviewOpen(false);
+    previewButtonRef.current?.focus();
+  }, []);
 
   return (
     <>
@@ -183,10 +188,7 @@ export default function App() {
         mappings={mappings}
         customVariations={customVariations}
         includeBreadcrumbList={includeBreadcrumbList}
-        onClose={() => {
-          setIsPreviewOpen(false);
-          previewButtonRef.current?.focus();
-        }}
+        onClose={handleModalClose}
       />
     </>
   );
