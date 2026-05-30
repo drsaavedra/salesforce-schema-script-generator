@@ -5,7 +5,6 @@ export default defineConfig({
   plugins: [react()],
   base: '/salesforce-schema-script-generator/',
   build: {
-    outDir: 'docs',
-    emptyOutDir: true,
+    outDir: 'dist',
   },
 });

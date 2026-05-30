@@ -10,3 +10,4 @@ test-files/
 
 # Node
 node_modules/
+dist/
