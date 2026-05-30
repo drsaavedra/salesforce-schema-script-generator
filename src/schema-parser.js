@@ -225,7 +225,7 @@ function _ensureParsed() {
 export async function loadSchemaFields(typeName = "Product") {
   await _ensureParsed();
   if (_parseError) {
-    return { fields: [], error: `Could not load schema.ttl: ${_parseError.message}. If testing locally, serve the docs/ folder over HTTP (e.g. VS Code Live Server or: npx serve docs).` };
+    return { fields: [], error: `Could not load schema.ttl: ${_parseError.message}. If testing locally, run the dev server (npm run dev) or serve the built dist/ folder over HTTP (npx serve dist).` };
   }
   const ancestors = getAncestors(_classMap, typeName);
   const props = extractProperties(_blocks, ancestors);
