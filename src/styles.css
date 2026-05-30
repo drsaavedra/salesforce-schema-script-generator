@@ -147,8 +147,15 @@ h2 {
   display: flex;
   gap: 8px;
   padding: 6px 10px;
-  pointer-events: none;
   user-select: none;
+}
+
+/* Back-only navigation: completed steps (.is-done) are clickable; the current
+   step is a no-op; future steps are disabled. Neutralize the global button
+   hover background and use a color shift on clickable steps instead. */
+.step-nav-btn:hover:not(:disabled) {
+  background: none;
+  border-color: var(--line);
 }
 
 .step-nav-btn[aria-current="step"] {
@@ -157,6 +164,17 @@ h2 {
 
 .step-nav-btn.is-done {
   color: var(--ink);
+  cursor: pointer;
+}
+
+.step-nav-btn.is-done:hover {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+}
+
+.step-nav-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .step-num {
@@ -384,24 +402,71 @@ h2 {
 
 /* ── Variation attributes panel (Step 2 — Bindings) ── */
 .variation-attrs-panel {
-  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  border-radius: 8px;
   margin-top: 24px;
-  padding-top: 20px;
+  padding: 18px 20px;
+}
+
+.variation-attrs-card-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .variation-attrs-heading {
-  color: var(--accent-strong);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  margin: 0 0 10px;
-  text-transform: uppercase;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: normal;
+  margin: 0;
+  text-transform: none;
 }
+
+.variation-attrs-info-trigger {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: none;
+  border-radius: 50%;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  height: 16px;
+  line-height: 16px;
+  min-height: auto;
+  padding: 0;
+  text-align: center;
+  width: 16px;
+}
+
+.variation-attrs-info-trigger:hover {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: transparent;
+}
+
+.variation-attrs-info-trigger:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.variation-attrs-info-body {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+}
+
+.variation-attrs-info-body p { margin: 0; }
 
 .variation-attrs-hint {
   color: var(--muted);
   font-size: 13px;
-  margin-bottom: 14px;
+  margin: 0 0 14px;
 }
 
 .custom-variation-list {
@@ -429,6 +494,15 @@ h2 {
   font-size: 13px;
 }
 
+.custom-variation-row .input-with-hint {
+  flex: 1;
+}
+
+.tree-row .input-with-hint {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ── Mapping banner ── */
 .mapping-banner {
   background: var(--accent-soft);
@@ -437,7 +511,11 @@ h2 {
   color: var(--ink);
   font-size: 13px;
   margin: 0;
-  padding: 10px 14px;
+  padding: 10px 14px 10px 30px;
+}
+
+.mapping-banner li + li {
+  margin-top: 5px;
 }
 
 .mapping-banner code {
@@ -447,6 +525,17 @@ h2 {
   color: var(--accent-strong);
   font-family: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
   font-size: 12px;
+  padding: 1px 5px;
+}
+
+kbd {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
   padding: 1px 5px;
 }
 
@@ -923,6 +1012,9 @@ h2 {
 .tree-val-other  { color: var(--muted); }
 
 /* ── Responsive ── */
+/* NOTE: 640px is the mobile breakpoint. Keep in sync with MOBILE_BREAKPOINT in
+   src/constants.js (MappingEditor's matchMedia view-switch reads it from there).
+   CSS media queries cannot reference JS constants, so the value is duplicated here. */
 @media (max-width: 640px) {
   .app-header {
     align-items: flex-start;
@@ -973,10 +1065,39 @@ h2 {
   .schema-toolbar {
     justify-content: center;
   }
+
+  /* Variation panel: extend tap areas to ≥44px without changing visual size */
+  .variation-attrs-info-trigger {
+    position: relative;
+  }
+  .variation-attrs-info-trigger::after {
+    content: '';
+    inset: -14px;
+    position: absolute;
+  }
+  .custom-variation-row .btn-remove {
+    min-height: 44px;
+    padding: 0 8px;
+  }
 }
 
 @media (max-width: 360px) {
   .field-tiles {
     grid-template-columns: 1fr;
   }
+}
+
+/* Tab-to-fill hint shown next to empty merge-expression inputs */
+.input-with-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-fill-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
 }

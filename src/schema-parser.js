@@ -1,4 +1,4 @@
-// Parses docs/data/schema.ttl (local copy of schema.org Turtle file) and returns
+// Parses public/data/schema.ttl (local copy of schema.org Turtle file) and returns
 // field descriptor objects for a given schema type.
 //
 // How it works:
@@ -24,7 +24,7 @@ const FIELD_OVERRIDES = {
   brand:              { path: "brand.name",                                              defaultSelected: false, valueType: "brand" },
   offers:             {                                                                  defaultSelected: true,  valueType: "offer" },
   additionalProperty: {                                                                  defaultSelected: false, valueType: "propertyValue" },
-  category:           { defaultExpression: "{!Record.ProductCategory.Name}",                                    valueType: "expression" },
+  category:           { defaultExpression: "{!Record.ProductCategory.Name}",            defaultSelected: true,  valueType: "expression" },
   manufacturer:       { path: "manufacturer.name",                                                              valueType: "organization" },
 
   // Non-obvious type hints (validator will reject wrong types)
@@ -43,7 +43,7 @@ const FIELD_OVERRIDES = {
 
 // Fields shown first in Step 1 tile grid, in order, per schema type.
 const RECOMMENDED_ORDER = {
-  Product: ["name", "description", "image", "sku", "productID", "offers", "brand", "additionalProperty"],
+  Product: ["name", "description", "image", "sku", "productID", "offers", "category", "brand", "additionalProperty"],
 };
 
 // Fields excluded because they cannot be expressed as a Salesforce merge field
@@ -139,6 +139,11 @@ function getAncestors(classMap, typeName) {
 // Returns [{propName, comment}].
 function extractProperties(blocks, targetTypes) {
   const results = [];
+  // Build ONE alternation regex for all target types up front, instead of
+  // compiling a fresh RegExp per type for every block (the TTL has thousands of
+  // blocks). Matches both ":Product" (old) and "schema:Product" (v30+).
+  const escaped = [...targetTypes].map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const domainRe = new RegExp(`(?:schema:)?:?(?:${escaped.join("|")})\\b`);
   for (const { name, text } of blocks) {
     if (!text.includes("a rdf:Property")) continue;
     if (FIELD_EXCLUSIONS.has(name)) continue;
@@ -148,8 +153,7 @@ function extractProperties(blocks, targetTypes) {
     // domainIncludes ends at the next ";" (next predicate) or end of block
     const diEnd = text.indexOf(";", diStart);
     const domainStr = diEnd > -1 ? text.slice(diStart, diEnd) : text.slice(diStart);
-    // Match both ":Product" (old) and "schema:Product" (v30+)
-    if (![...targetTypes].some((t) => new RegExp(`(?:schema:)?:?${t}\\b`).test(domainStr))) continue;
+    if (!domainRe.test(domainStr)) continue;
     const tripleMatch = text.match(/rdfs:comment\s+"""([\s\S]*?)"""/);
     const singleMatch = text.match(/rdfs:comment\s+"((?:[^"\\]|\\.)*)"/);
     const raw = tripleMatch ? tripleMatch[1] : singleMatch ? singleMatch[1] : "";
@@ -198,7 +202,7 @@ let _fetchPromise = null;
 
 function _ensureParsed() {
   if (_fetchPromise) return _fetchPromise;
-  _fetchPromise = fetch("data/schema.ttl")
+  _fetchPromise = fetch(import.meta.env.BASE_URL + 'data/schema.ttl')
     .then((res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.text();
@@ -218,10 +222,10 @@ function _ensureParsed() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 // Returns { fields, error } — error is null on success, a string message on failure.
-async function loadSchemaFields(typeName = "Product") {
+export async function loadSchemaFields(typeName = "Product") {
   await _ensureParsed();
   if (_parseError) {
-    return { fields: [], error: `Could not load schema.ttl: ${_parseError.message}. If testing locally, serve the docs/ folder over HTTP (e.g. VS Code Live Server or: npx serve docs).` };
+    return { fields: [], error: `Could not load schema.ttl: ${_parseError.message}. If testing locally, run the dev server (npm run dev) or serve the built dist/ folder over HTTP (npx serve dist).` };
   }
   const ancestors = getAncestors(_classMap, typeName);
   const props = extractProperties(_blocks, ancestors);

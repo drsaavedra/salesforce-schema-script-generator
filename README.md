@@ -38,7 +38,7 @@ See the [Salesforce B2B Commerce SEO documentation](https://help.salesforce.com/
 
 Choose which schema.org Product fields to include in your structured data. Fields are sourced directly from the official [schema.org Product specification](https://schema.org/Product).
 
-- Click **Recommended** to pre-select the fields most useful for e-commerce SEO: `name`, `description`, `image`, `sku`, `productID`, `offers`, `brand`, `additionalProperty`
+- Click **Recommended** to pre-select the fields most useful for e-commerce SEO: `name`, `description`, `image`, `sku`, `productID`, `category`, `offers`, `brand`, `additionalProperty`
 - Use the search bar to filter fields by name or description. When results are shown, a **Select all matching** button appears to bulk-select every result at once
 - Select as many or as few fields as you need
 - Click **Next** when you're done
@@ -63,6 +63,8 @@ Map each selected field to a Salesforce merge expression.
 | `offers.priceCurrency` | `{!Record.Offers.Currency}` |
 
 **Custom fields** — for fields like `color`, `brand.name`, or `material`, enter the API name of the field on your Product2 object (e.g., `My_Brand__c`). The tool wraps it automatically as `{!Record.My_Brand__c}`.
+
+**Tab-to-fill** — a faster way to enter merge expressions: type any Salesforce field API name (e.g. `Name` or `Price__c`) into any expression input and press **Tab ↹**. The tool wraps it as `{!Record.Name}` or `{!Record.Price__c}` automatically. You can also type a partial merge expression (e.g. `{!Record.Pr`) and press **Tab ↹** to complete it to the field's suggested placeholder.
 
 **Type hints** — colored badges next to each field show the expected data type. Pay attention to amber **Boolean** and **Number** badges — mapping a text merge expression to these types produces a validation error.
 
@@ -119,21 +121,20 @@ After pasting into Experience Builder and publishing, validate the page's struct
 
 ## Local development
 
-The site is a no-build static site — no npm or bundler required.
-
-Because the tool fetches `data/schema.ttl` at load time, it must be served over HTTP (not opened as a local `file://`). Use any local server:
+The site is built with [Vite](https://vite.dev/) and [React 18](https://react.dev/). Node.js 18+ is required.
 
 ```bash
-# VS Code — install the Live Server extension and click "Go Live"
+# Install dependencies
+npm install
 
-# Node
-npx serve docs
+# Start the dev server (hot-reload)
+npm run dev
 
-# Python
-python -m http.server 8000 --directory docs
+# Production build — output goes to docs/
+npm run build
 ```
 
-Then open `http://localhost:8000` (or whatever port your server uses).
+The dev server typically starts at `http://localhost:5173`.
 
 ---
 
@@ -153,7 +154,7 @@ The `tests/` directory contains a static code analysis QA suite. Tests are run b
 
 Open Claude Code in this repo and send a prompt like:
 
-> Spawn 4 subagents in parallel, one per file in `tests/`. Each agent should read its test file and the source files in `docs/`, trace the code statically for each test case, and report PASS or FAIL with severity, affected function/line, and expected vs actual behaviour.
+> Spawn 4 subagents in parallel, one per file in `tests/`. Each agent should read its test file and the React component source files listed at the top of the file under "How to run", trace the code statically for each test case, and report PASS or FAIL with severity, affected component/line, and expected vs actual behaviour.
 
 Each test file is self-contained with instructions for which source files to read.
 
@@ -161,31 +162,39 @@ Each test file is self-contained with instructions for which source files to rea
 
 | File | Scope | Cases |
 |---|---|---|
-| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output, commaSeparatedArray, variation merging | 18 |
-| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser, output structure validation | 28 |
-| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases, variation attributes UI | 26 |
-| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer, variation panel | 31 |
+| `tests/qa-1-field-combinations.md` | All field valueTypes produce correct JSON-LD output, commaSeparatedArray, variation merging | 19 |
+| `tests/qa-2-data-types-validation.md` | Data type coercion, warnings, FIELD_EXCLUSIONS, TTL parser, output structure validation | 27 |
+| `tests/qa-3-edge-cases-ui.md` | Navigation, modal, copy/download, accessibility, edge cases, Tab-to-fill, variation attributes UI | 31 |
+| `tests/qa-4-mobile-tablet-views.md` | Mobile form view, tablet tree view, responsive dispatch, sticky footer, variation panel | 30 |
 
-All 103 test cases must pass before merging to `main`.
+All 107 test cases must pass before merging to `main`.
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome. The codebase is vanilla HTML/CSS/JavaScript with no build step:
+Issues and PRs welcome. The codebase is React 18 + Vite (plain JavaScript, no TypeScript):
 
 ```
-docs/
-  index.html        — markup and wizard structure
-  styles.css        — all styles
-  constants.js      — static configuration (schema registry, picklists)
-  schema-parser.js  — schema.org TTL parsing logic
-  app.js            — UI state, rendering, event handling
+src/
+  App.jsx                     — app shell, all top-level state, step routing
+  schema-parser.js            — schema.org TTL parsing logic
+  constants.js                — static configuration (schema registry, picklists)
+  styles.css                  — all styles
+  components/
+    FieldList.jsx             — Step 1 field tile grid, search, select-all
+    MappingEditor.jsx         — Step 2 tree editor (tablet+) and flat form (mobile)
+    VariationAttrsPanel.jsx   — variation attribute rows with Tab-to-fill
+    ScriptOutput.jsx          — Step 3 script builder, copy, download, warnings
+    SchemaPreviewModal.jsx    — live JSON tree preview modal
+    StepsNav.jsx              — step indicator nav
   data/
-    schema.ttl      — bundled schema.org vocabulary (pinned, manually updated)
+    schema.ttl                — bundled schema.org vocabulary (pinned, manually updated)
+docs/                         — Vite build output (GitHub Pages root)
 tests/
-  qa-*.md           — static analysis test cases (run via Claude Code subagents)
-learning.md         — learning journal: architectural decisions and lessons from building this tool
+  qa-*.md                     — static analysis test cases (run via Claude Code subagents)
+index.html                    — Vite entry point
+learning.md                   — learning journal: architectural decisions and lessons from building this tool
 ```
 
 ---
